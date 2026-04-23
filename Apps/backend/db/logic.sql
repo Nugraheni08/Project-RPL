@@ -1,8 +1,8 @@
 -- mencari fasilitas terdekat dari lokasi user
 SELECT 
     name, 
-    type,        -- Informasi tipe yang kamu butuhkan
-    category,    -- Informasi tambahan (misal: Air Dingin/Normal)
+    type,        -- Informasi tipe yang dibutuhkan
+    category,    -- Informasi tambahan (misal: Dispenser atau Reverse Osmosis)
     latitude, 
     longitude,
     -- Rumus Haversine untuk menghitung jarak dalam KM
