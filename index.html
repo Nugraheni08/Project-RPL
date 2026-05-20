@@ -3,1016 +3,899 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>Wmap — Sustain The Future</title>
+  <title>Wmap</title>
+
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
-  <style>
-    :root {
-      --green: #1D9E75;
-      --green-dark: #0F6E56;
-      --green-light: #E8F8F2;
-      --blue: #185FA5;
-      --orange: #D85A30;
-      --bg: #F4F7F5;
-      --card: #ffffff;
-      --text: #1a1a1a;
-      --muted: #7a8c84;
-      --border: #e4ece8;
-      --radius: 16px;
-      --shadow: 0 4px 20px rgba(0,0,0,0.08);
-    }
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@700&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      max-width: 430px;
-      margin: 0 auto;
-      position: relative;
-    }
-
-    /* ── TOP HEADER ── */
-    .header {
-      background: var(--card);
-      padding: 14px 20px 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      z-index: 10;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .logo svg { width: 28px; height: 28px; }
-    .logo-text {
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--green-dark);
-      letter-spacing: -0.5px;
-    }
-    .header-icons { display: flex; gap: 10px; align-items: center; }
-    .icon-btn {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: var(--green-light);
-      border: none;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      font-size: 15px;
-      transition: background 0.2s;
-    }
-    .icon-btn:hover { background: #cceedd; }
-
-    /* ── SEARCH BAR ── */
-    .search-wrap {
-      padding: 12px 16px;
-      background: var(--card);
-      flex-shrink: 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .search-input {
-      width: 100%;
-      padding: 10px 14px 10px 38px;
-      border-radius: 12px;
-      border: 1.5px solid var(--border);
-      font-family: inherit;
-      font-size: 13px;
-      background: var(--bg);
-      color: var(--text);
-      outline: none;
-      position: relative;
-    }
-    .search-wrap { position: relative; }
-    .search-icon {
-      position: absolute;
-      left: 28px; top: 50%;
-      transform: translateY(-50%);
-      font-size: 15px;
-      color: var(--muted);
-      pointer-events: none;
-    }
-
-    /* ── SCROLL CONTENT ── */
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    /* ── STATS CARD ── */
-    .stats-card {
-      margin: 14px 16px 0;
-      background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
-      border-radius: var(--radius);
-      padding: 16px 18px;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-    .stats-card::after {
-      content: '';
-      position: absolute;
-      right: -20px; top: -20px;
-      width: 100px; height: 100px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.07);
-    }
-    .stats-card::before {
-      content: '';
-      position: absolute;
-      right: 30px; bottom: -30px;
-      width: 80px; height: 80px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-    }
-    .stats-label { font-size: 11px; opacity: 0.8; font-weight: 500; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .stats-number { font-size: 36px; font-weight: 800; line-height: 1; }
-    .stats-sub { font-size: 12px; opacity: 0.75; margin-top: 6px; }
-    .stats-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 10px;
-      background: rgba(255,255,255,0.2);
-      border-radius: 20px;
-      padding: 4px 10px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .stats-row {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-    }
-    .stat-mini {
-      flex: 1;
-      background: rgba(255,255,255,0.13);
-      border-radius: 10px;
-      padding: 10px 12px;
-      text-align: center;
-    }
-    .stat-mini-num { font-size: 20px; font-weight: 800; }
-    .stat-mini-lbl { font-size: 10px; opacity: 0.75; font-weight: 500; margin-top: 2px; text-transform: uppercase; }
-
-    /* ── SECTION HEADER ── */
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 16px 16px 8px;
-    }
-    .section-title { font-size: 14px; font-weight: 700; color: var(--text); }
-    .view-all { font-size: 12px; color: var(--green); font-weight: 600; cursor: pointer; }
-
-    /* ── MAP CONTAINER ── */
-    .map-card {
-      margin: 0 16px;
-      border-radius: var(--radius);
-      overflow: hidden;
-      border: 1.5px solid var(--border);
-      position: relative;
-      box-shadow: var(--shadow);
-    }
-    #map { width: 100%; height: 240px; }
-
-    .map-btn {
-      position: absolute;
-      bottom: 10px; left: 50%;
-      transform: translateX(-50%);
-      z-index: 500;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: 20px;
-      padding: 8px 18px;
-      font-family: inherit;
-      font-size: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 3px 12px rgba(29,158,117,0.4);
-      white-space: nowrap;
-      transition: background 0.2s;
-    }
-    .map-btn:hover { background: var(--green-dark); }
-    .map-btn:disabled { background: #aaa; }
-
-    /* ── LEADERBOARD ── */
-    .leaderboard-list { margin: 0 16px; display: flex; flex-direction: column; gap: 8px; }
-    .lb-item {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-    }
-    .lb-rank {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--muted);
-      min-width: 22px;
-    }
-    .lb-rank.gold { color: #F5A623; }
-    .lb-rank.silver { color: #9BA3AF; }
-    .lb-rank.bronze { color: #C17B42; }
-    .lb-avatar {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: var(--green-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-    }
-    .lb-info { flex: 1; }
-    .lb-name { font-size: 13px; font-weight: 700; }
-    .lb-role { font-size: 11px; color: var(--muted); font-weight: 500; }
-    .lb-pts { font-size: 13px; font-weight: 800; color: var(--green); }
-
-    /* ── RECENT ACTIVITY ── */
-    .activity-list { margin: 0 16px 100px; display: flex; flex-direction: column; gap: 8px; }
-    .act-item {
-      background: var(--card);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-    }
-    .act-icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      background: var(--green-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      flex-shrink: 0;
-    }
-    .act-info { flex: 1; }
-    .act-name { font-size: 13px; font-weight: 600; }
-    .act-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .act-pts { font-size: 13px; font-weight: 700; color: var(--green); }
-
-    /* ── BOTTOM NAV ── */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 430px;
-      background: var(--card);
-      border-top: 1px solid var(--border);
-      display: flex;
-      padding: 10px 0 20px;
-      z-index: 200;
-    }
-    .nav-item {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      cursor: pointer;
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--muted);
-      transition: color 0.2s;
-      border: none;
-      background: none;
-      font-family: inherit;
-      padding: 0;
-    }
-    .nav-item.active { color: var(--green); }
-    .nav-icon { font-size: 20px; line-height: 1; }
-
-    /* ── MODAL OVERLAY ── */
-    .modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 500;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-
-    .modal-sheet {
-      background: var(--card);
-      border-radius: 24px 24px 0 0;
-      width: 100%;
-      max-width: 430px;
-      max-height: 85dvh;
-      overflow-y: auto;
-      padding: 0 0 30px;
-      animation: slideUp 0.3s ease;
-    }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-    .modal-handle {
-      width: 40px; height: 4px;
-      background: #ddd;
-      border-radius: 2px;
-      margin: 12px auto 16px;
-    }
-    .modal-header {
-      padding: 0 20px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .modal-title { font-size: 17px; font-weight: 800; }
-    .modal-subtitle { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .modal-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: var(--green-light);
-      color: var(--green-dark);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      margin-top: 8px;
-    }
-
-    /* RATING */
-    .rating-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
-    .rating-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.4px; }
-    .stars-display { display: flex; align-items: center; gap: 6px; }
-    .stars { display: flex; gap: 4px; }
-    .star { font-size: 22px; color: #ddd; cursor: pointer; transition: color 0.15s; }
-    .star.filled { color: #F5A623; }
-    .rating-avg { font-size: 24px; font-weight: 800; color: var(--text); }
-    .rating-count { font-size: 12px; color: var(--muted); }
-
-    /* COMMENTS */
-    .comments-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
-    .comment-item {
-      display: flex; gap: 10px; margin-bottom: 14px;
-    }
-    .comment-avatar {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--green-light);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
-    .comment-body { flex: 1; }
-    .comment-name { font-size: 12px; font-weight: 700; }
-    .comment-time { font-size: 10px; color: var(--muted); margin-left: 6px; }
-    .comment-text { font-size: 12px; color: #444; margin-top: 4px; line-height: 1.5; }
-    .comment-stars { font-size: 11px; color: #F5A623; margin-top: 2px; }
-
-    .add-comment { margin-top: 12px; }
-    .add-comment textarea {
-      width: 100%;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-family: inherit;
-      font-size: 13px;
-      resize: none;
-      outline: none;
-      background: var(--bg);
-      color: var(--text);
-    }
-    .add-comment textarea:focus { border-color: var(--green); }
-    .user-stars { display: flex; gap: 5px; margin-bottom: 8px; }
-    .user-star { font-size: 24px; color: #ddd; cursor: pointer; transition: color 0.15s; }
-    .user-star.selected { color: #F5A623; }
-
-    /* ACTION BTNS */
-    .action-btns { padding: 16px 20px; display: flex; gap: 10px; }
-    .btn-submit {
-      flex: 1;
-      background: var(--green);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 12px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .btn-submit:hover { background: var(--green-dark); }
-    .btn-report {
-      background: #FFF0EB;
-      color: var(--orange);
-      border: none;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background 0.2s;
-      white-space: nowrap;
-    }
-    .btn-report:hover { background: #fde0d0; }
-
-    /* ── REPORT MODAL ── */
-    .report-modal .modal-header { border-color: #fde0d0; }
-    .report-title { font-size: 17px; font-weight: 800; color: var(--orange); }
-    .report-form { padding: 16px 20px; }
-    .form-group { margin-bottom: 14px; }
-    .form-label { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.4px; }
-    .form-input, .form-select, .form-textarea {
-      width: 100%;
-      border: 1.5px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-family: inherit;
-      font-size: 13px;
-      outline: none;
-      background: var(--bg);
-      color: var(--text);
-      appearance: none;
-    }
-    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--orange); }
-    .form-textarea { resize: none; }
-    .issue-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .chip {
-      padding: 7px 12px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      background: var(--card);
-      transition: all 0.15s;
-      color: var(--text);
-    }
-    .chip.selected { background: #FFF0EB; border-color: var(--orange); color: var(--orange); }
-    .btn-send-report {
-      width: 100%;
-      background: var(--orange);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 14px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      margin: 0 20px;
-      width: calc(100% - 40px);
-      transition: background 0.2s;
-    }
-    .btn-send-report:hover { background: #b8431e; }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 90px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1a1a1a;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 20px;
-      font-size: 13px;
-      font-weight: 600;
-      opacity: 0;
-      transition: all 0.3s;
-      z-index: 9999;
-      pointer-events: none;
-      white-space: nowrap;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* Fun fact */
-    .fun-fact {
-      margin: 14px 16px 0;
-      background: #FFFBEA;
-      border: 1.5px solid #F5E9A0;
-      border-radius: var(--radius);
-      padding: 12px 16px;
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
-    .fun-fact-icon { font-size: 20px; flex-shrink: 0; }
-    .fun-fact-label { font-size: 10px; font-weight: 700; color: #B5860A; text-transform: uppercase; letter-spacing: 0.5px; }
-    .fun-fact-text { font-size: 12px; color: #555; line-height: 1.5; margin-top: 3px; }
-
-    /* Scrollbar */
-    .content::-webkit-scrollbar { width: 0; }
-    .modal-sheet::-webkit-scrollbar { width: 0; }
-
-    /* Leaflet fix */
-    .leaflet-control-zoom { display: none; }
-    .leaflet-routing-container { display: none !important; }
-  </style>
+  <!-- App CSS -->
+  <link rel="stylesheet" href="style3.css"/>
 </head>
 <body>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="logo">
-    <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="20" fill="#E8F8F2"/>
-      <path d="M20 8C20 8 12 16 12 23C12 27.4 15.6 31 20 31C24.4 31 28 27.4 28 23C28 16 20 8 20 8Z" fill="#1D9E75"/>
-      <path d="M20 14C20 14 15 19.5 15 23.5C15 26.5 17.2 29 20 29" fill="#0F6E56"/>
-      <circle cx="20" cy="24" r="3" fill="white" opacity="0.6"/>
-    </svg>
-    <span class="logo-text">Wmap</span>
+<!-- ============================================================
+     AUTH SECTION
+     ============================================================ -->
+<div id="auth-wrapper">
+  <div class="phone-shell">
+
+    <!-- SUCCESS OVERLAY -->
+    <div class="success-overlay" id="success">
+      <div class="success-circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2>Akun Dibuat!</h2>
+      <p>Selamat datang di Wmap.</p>
+      <button class="btn-white" onclick="goToLogin()">Masuk Sekarang</button>
+    </div>
+
+    <!-- ===== SPLASH ===== -->
+    <div class="screen active" id="s-splash">
+      <div class="splash-logo-wrap">
+        <svg class="splash-logo-svg" width="130" height="140" viewBox="0 0 130 140" fill="none">
+          <path d="M65 18 C34 18 20 45 32 70 C42 90 65 102 65 102 C65 102 88 90 98 70 C110 45 96 18 65 18Z" fill="#2d7a52" opacity="0.9"/>
+          <path d="M65 24 C80 24 94 40 95 62 C96 80 84 95 65 102 Z" fill="#1a2e4a" opacity="0.88"/>
+          <circle cx="65" cy="45" r="11" fill="white" opacity="0.55"/>
+          <path d="M42 74 C50 58 62 52 65 102 C56 84 44 80 42 74Z" fill="white" opacity="0.28"/>
+        </svg>
+        <div class="splash-brand"><span class="w">W</span><span class="rest">map</span></div>
+        <div class="splash-tagline">Sustain the future</div>
+        <div class="splash-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div style="position:absolute;bottom:56px;left:0;right:0;padding:0 28px;">
+        <button class="btn-primary" onclick="go('s-login')">
+          Mulai
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ===== LOGIN ===== -->
+    <div class="screen" id="s-login">
+      <div class="login-top">
+        <div class="brand-inline" style="margin-bottom:2px;">
+          <svg width="36" height="40" viewBox="0 0 130 140" fill="none">
+            <path d="M65 18 C34 18 20 45 32 70 C42 90 65 102 65 102 C65 102 88 90 98 70 C110 45 96 18 65 18Z" fill="#2d7a52" opacity="0.9"/>
+            <path d="M65 24 C80 24 94 40 95 62 C96 80 84 95 65 102 Z" fill="#1a2e4a" opacity="0.88"/>
+            <circle cx="65" cy="45" r="11" fill="white" opacity="0.55"/>
+          </svg>
+          <div class="name"><span class="w">W</span><span class="rest">map</span></div>
+        </div>
+        <div class="brand-sub">Sustain the future</div>
+      </div>
+
+      <div class="login-body">
+        <h1>Welcome Back</h1>
+        <p class="sub">Join the green revolution today.</p>
+
+        <label class="field-label">Email Address</label>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,12 2,6"/>
+            </svg>
+          </span>
+          <input class="field-input" type="email" placeholder="username@apps.ipb.ac.id" id="login-email"/>
+        </div>
+
+        <label class="field-label">Password</label>
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </span>
+          <input class="field-input" type="password" placeholder="••••••••" id="login-pw"/>
+          <button class="eye-btn" onclick="togglePw('login-pw', this)" aria-label="Toggle password">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="forgot-link"><button onclick="go('s-forgot')">Forgot Password?</button></div>
+
+        <button class="btn-primary" onclick="handleLogin()">
+          Sign In
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
+
+        <div class="link-row">New to the system? <button onclick="go('s-register')">Register here</button></div>
+      </div>
+    </div>
+
+    <!-- ===== REGISTER ===== -->
+    <div class="screen" id="s-register">
+      <div class="header" style="padding:52px 24px 0;">
+        <div class="brand-inline">
+          <svg width="26" height="30" viewBox="0 0 130 140" fill="none">
+            <path d="M65 18 C34 18 20 45 32 70 C42 90 65 102 65 102 C65 102 88 90 98 70 C110 45 96 18 65 18Z" fill="#2d7a52" opacity="0.9"/>
+            <path d="M65 24 C80 24 94 40 95 62 C96 80 84 95 65 102 Z" fill="#1a2e4a" opacity="0.88"/>
+            <circle cx="65" cy="45" r="11" fill="white" opacity="0.55"/>
+          </svg>
+          <div class="name"><span class="w">W</span><span class="rest">map</span></div>
+        </div>
+        <div style="font-size:26px;font-weight:700;color:var(--text-dark);margin-top:16px;">Create Account</div>
+        <div style="font-size:14px;color:var(--text-muted);margin-top:4px;">Join the green revolution</div>
+      </div>
+
+      <div class="card">
+        <!-- Social sign-up -->
+        <button class="btn-social" style="margin-bottom:10px;">
+          <svg viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Sign Up With Google
+        </button>
+        <button class="btn-social" style="margin-bottom:4px;">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="color:var(--text-dark)">
+            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+          </svg>
+          Sign Up With Apple
+        </button>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span>Or sign up with email</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <!-- Email -->
+        <label class="field-label" style="letter-spacing:0;text-transform:none;font-size:14px;margin-bottom:6px;">Email</label>
+        <div class="field-wrap">
+          <input class="field-input no-icon" type="email" placeholder="Enter your email" id="reg-email"/>
+        </div>
+
+     <!-- Updated NIP/NIM field with role detection and validation -->
+
+<!-- Role selector -->
+<label class="field-label" style="letter-spacing:0;text-transform:none;font-size:14px;margin-bottom:6px;">Role</label>
+<div style="display:flex;gap:8px;margin-bottom:16px;">
+  <button type="button" id="role-mahasiswa" onclick="setRole('mahasiswa')"
+    style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--green-mid);background:var(--green-mid);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">
+    Mahasiswa
+  </button>
+  <button type="button" id="role-dosen" onclick="setRole('dosen')"
+    style="flex:1;padding:10px;border-radius:8px;border:2px solid #ccc;background:#fff;color:#555;font-size:14px;font-weight:600;cursor:pointer;">
+    Dosen / Staf
+  </button>
+</div>
+
+<!-- NIM field (Mahasiswa) -->
+<div id="nim-field-wrap">
+  <label class="field-label" style="letter-spacing:0;text-transform:none;font-size:14px;margin-bottom:6px;">
+    NIM
+    <span style="font-size:11px;font-weight:400;color:var(--text-gray);margin-left:4px;">(11 digit, huruf A–M + angka)</span>
+  </label>
+  <div class="field-wrap" style="margin-bottom:6px;">
+    <input
+      class="field-input no-icon"
+      type="text"
+      maxlength="11"
+      placeholder="Contoh: M04032610101"
+      id="reg-nim"
+      oninput="clearNimError();"
+    />
   </div>
-  <div class="header-icons">
-    <button class="icon-btn">🔔</button>
-    <button class="icon-btn">👤</button>
+  <div class="field-error-msg" id="nim-error">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Masukkan NIM yang valid
   </div>
 </div>
 
-<!-- SEARCH -->
-<div class="search-wrap">
-  <span class="search-icon">🔍</span>
-  <input class="search-input" placeholder="Cari water station..."/>
+<!-- NIP field (Dosen) -->
+<div id="nip-field-wrap" style="display:none;">
+  <label class="field-label" style="letter-spacing:0;text-transform:none;font-size:14px;margin-bottom:6px;">
+    NIP
+    <span style="font-size:11px;font-weight:400;color:var(--text-gray);margin-left:4px;">(18 digit)</span>
+  </label>
+  <div class="field-wrap" style="margin-bottom:6px;">
+    <input
+      class="field-input no-icon"
+      type="text"
+      inputmode="numeric"
+      maxlength="18"
+      placeholder="Masukkan 18 digit NIP"
+      id="reg-nip"
+      oninput="this.value=this.value.replace(/\D/g,''); clearNipError();"
+    />
+  </div>
+  <div class="field-error-msg" id="nip-error">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Masukkan NIP yang valid
+  </div>
 </div>
 
-<!-- CONTENT -->
-<div class="content" id="mainContent">
+        <!-- Password -->
+        <label class="field-label" style="letter-spacing:0;text-transform:none;font-size:14px;margin-bottom:6px;">Password</label>
+        <div class="field-wrap" style="margin-bottom:22px;">
+          <input class="field-input no-icon" type="password" placeholder="Enter your password" id="reg-pw"/>
+        </div>
 
-  <!-- STATS CARD -->
-  <div class="stats-card">
-    <div class="stats-label">Plastic Bottles Saved</div>
-    <div class="stats-number">124</div>
-    <div class="stats-badge">⬆ +12 Bottles This Week</div>
-    <div class="stats-row">
-      <div class="stat-mini">
-        <div class="stat-mini-num">⚡ 2,450</div>
-        <div class="stat-mini-lbl">Eco Points</div>
+        <button class="btn-primary" onclick="startRegistrationFlow()">
+          Sign Up
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </button>
       </div>
-      <div class="stat-mini">
-        <div class="stat-mini-num">📊 #12</div>
-        <div class="stat-mini-lbl">Rank</div>
+
+      <div class="link-row" style="padding-bottom:32px;">
+        Already have an account? <button onclick="go('s-login')">Sign In</button>
       </div>
     </div>
-  </div>
 
-  <!-- FUN FACT -->
-  <div class="fun-fact">
-    <div class="fun-fact-icon">📍</div>
-    <div>
-      <div class="fun-fact-label">Daily Fun Fact</div>
-      <div class="fun-fact-text">Recycling just one aluminium can saves enough energy to power a TV for three hours</div>
-    </div>
-  </div>
-
-  <!-- MAP -->
-  <div class="section-header">
-    <span class="section-title">🗺 Water Stations Terdekat</span>
-    <span class="view-all">Lihat Semua</span>
-  </div>
-  <div class="map-card">
-    <div id="map"></div>
-    <button class="map-btn" id="btn-find" onclick="findNearest()">📍 Cari Terdekat</button>
-  </div>
-
-  <!-- LEADERBOARD -->
-  <div class="section-header" style="margin-top:18px;">
-    <span class="section-title">🏆 Leaderboard</span>
-    <span class="view-all">View All</span>
-  </div>
-  <div class="leaderboard-list">
-    <div class="lb-item">
-      <div class="lb-rank gold">1</div>
-      <div class="lb-avatar">🧑</div>
-      <div class="lb-info">
-        <div class="lb-name">Ziggy Zagga</div>
-        <div class="lb-role">TOP RECYCLER</div>
+    <!-- ===== EMAIL VERIFY (Register) ===== -->
+    <div class="screen" id="s-verify-reg">
+      <button class="back-btn" onclick="go('s-register')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <div class="steps" style="padding-top:8px;">
+        <div class="step-dot done" id="step1"></div>
+        <div class="step-dot active" id="step2"></div>
+        <div class="step-dot" id="step3"></div>
       </div>
-      <div class="lb-pts">2,450 pts</div>
-    </div>
-    <div class="lb-item">
-      <div class="lb-rank silver">2</div>
-      <div class="lb-avatar">👩</div>
-      <div class="lb-info">
-        <div class="lb-name">Khairul</div>
-        <div class="lb-role">TOP RECYCLER</div>
-      </div>
-      <div class="lb-pts">2,150 pts</div>
-    </div>
-    <div class="lb-item">
-      <div class="lb-rank bronze">3</div>
-      <div class="lb-avatar">👦</div>
-      <div class="lb-info">
-        <div class="lb-name">Kenpo</div>
-        <div class="lb-role">ECO WARRIOR</div>
-      </div>
-      <div class="lb-pts">2,000 pts</div>
-    </div>
-  </div>
-
-  <!-- RECENT ACTIVITY -->
-  <div class="section-header" style="margin-top:18px;">
-    <span class="section-title">⚡ Recent Activity</span>
-    <span class="view-all">View All</span>
-  </div>
-  <div class="activity-list">
-    <div class="act-item">
-      <div class="act-icon">💧</div>
-      <div class="act-info">
-        <div class="act-name">Refill water di Faperta</div>
-        <div class="act-time">3 min ago · 923ml refilled</div>
-      </div>
-      <div class="act-pts">+10 pt</div>
-    </div>
-    <div class="act-item">
-      <div class="act-icon">💧</div>
-      <div class="act-info">
-        <div class="act-name">Refill water di Rektorat</div>
-        <div class="act-time">Kemarin</div>
-      </div>
-      <div class="act-pts">+10 pt</div>
-    </div>
-    <div class="act-item">
-      <div class="act-icon">♻️</div>
-      <div class="act-info">
-        <div class="act-name">Deposit Bottle Waste</div>
-        <div class="act-time">2 hari lalu</div>
-      </div>
-      <div class="act-pts">+10 pt</div>
-    </div>
-  </div>
-
-</div>
-
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <button class="nav-item active">
-    <span class="nav-icon">🏠</span>Home
-  </button>
-  <button class="nav-item">
-    <span class="nav-icon">🗺</span>Map
-  </button>
-  <button class="nav-item">
-    <span class="nav-icon">📊</span>Stats
-  </button>
-  <button class="nav-item">
-    <span class="nav-icon">👤</span>Profile
-  </button>
-</div>
-
-<!-- STATION MODAL -->
-<div class="modal-overlay" id="stationModal">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-title" id="modal-name">Water Station Rektorat</div>
-      <div class="modal-subtitle" id="modal-addr">Gedung Rektorat IPB</div>
-      <div class="modal-badge" id="modal-dist">📍 ~120 meter</div>
-    </div>
-
-    <!-- RATING -->
-    <div class="rating-section">
-      <div class="rating-label">Rating & Ulasan</div>
-      <div class="stars-display">
-        <div class="rating-avg" id="modal-avg-rating">4.3</div>
-        <div>
-          <div class="stars" id="display-stars"></div>
-          <div class="rating-count" id="modal-rating-count">dari 28 ulasan</div>
+      <div class="icon-card" style="margin-top:20px;">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,12 2,6"/>
+          </svg>
+        </div>
+        <h2>Verifikasi Email</h2>
+        <p class="desc">
+          Masukkan kode 4 digit yang telah dikirim ke<br>
+          <span class="email-highlight" id="email-display">username@apps.ipb.ac.id</span>
+        </p>
+        <div class="otp-grid full">
+          <input class="otp-input" type="text" maxlength="1" id="otp-r-1" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-r-2" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-r-3" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-r-4" inputmode="numeric"/>
+        </div>
+<button class="btn-primary full" onclick="verifyOTP()">
+  Verify Code
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+</button>
+        <div class="timer-wrap">
+          <div class="timer-count" id="reg-timer">00 : 60</div>
+          <button class="resend-btn" id="reg-resend" disabled onclick="restartTimer()">Resend code</button>
         </div>
       </div>
     </div>
 
-    <!-- COMMENTS -->
-    <div class="comments-section">
-      <div class="rating-label">Komentar</div>
-      <div id="comments-list"></div>
-
-      <div class="add-comment">
-        <div class="rating-label" style="margin-bottom:6px;">Beri Ulasan</div>
-        <div class="user-stars" id="user-stars">
-          <span class="user-star" data-v="1">★</span>
-          <span class="user-star" data-v="2">★</span>
-          <span class="user-star" data-v="3">★</span>
-          <span class="user-star" data-v="4">★</span>
-          <span class="user-star" data-v="5">★</span>
-        </div>
-        <textarea id="comment-input" rows="3" placeholder="Tulis komentar..."></textarea>
+    <!-- ===== SET PASSWORD (Register) ===== -->
+    <div class="screen" id="s-newpass-reg">
+      <button class="back-btn" onclick="go('s-verify-reg')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <div class="steps" style="padding-top:8px;">
+        <div class="step-dot done"></div>
+        <div class="step-dot done"></div>
+        <div class="step-dot active"></div>
       </div>
-    </div>
-
-    <div class="action-btns">
-      <button class="btn-submit" onclick="submitComment()">Kirim Ulasan</button>
-      <button class="btn-report" onclick="openReport()">🚨 Lapor</button>
-    </div>
-  </div>
-</div>
-
-<!-- REPORT MODAL -->
-<div class="modal-overlay" id="reportModal">
-  <div class="modal-sheet report-modal">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="report-title">🚨 Laporkan Masalah</div>
-      <div class="modal-subtitle" id="report-station-name">Water Station Rektorat</div>
-    </div>
-    <div class="report-form">
-
-      <div class="form-group">
-        <label class="form-label">Jenis Masalah</label>
-        <div class="issue-chips" id="issue-chips">
-          <div class="chip" onclick="toggleChip(this)">Mesin rusak</div>
-          <div class="chip" onclick="toggleChip(this)">Air tidak keluar</div>
-          <div class="chip" onclick="toggleChip(this)">Kotor / tidak higienis</div>
-          <div class="chip" onclick="toggleChip(this)">Antrian panjang</div>
-          <div class="chip" onclick="toggleChip(this)">Lokasi sulit dijangkau</div>
-          <div class="chip" onclick="toggleChip(this)">Lainnya</div>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Nama Pelapor</label>
-        <input class="form-input" placeholder="Nama kamu..." id="report-name"/>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Kontak (opsional)</label>
-        <input class="form-input" placeholder="Email / No. HP" id="report-contact"/>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Deskripsi Masalah</label>
-        <textarea class="form-textarea" rows="4" placeholder="Ceritakan masalah yang kamu temukan..." id="report-desc"></textarea>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Tingkat Urgensi</label>
-        <select class="form-select" id="report-urgency">
-          <option value="">Pilih tingkat urgensi</option>
-          <option value="low">🟢 Rendah — bisa ditunda</option>
-          <option value="medium">🟡 Sedang — perlu diperbaiki</option>
-          <option value="high">🔴 Tinggi — segera diperbaiki!</option>
-        </select>
-      </div>
-
-    </div>
-    <button class="btn-send-report" onclick="submitReport()">📤 Kirim Laporan</button>
-    <div style="height:20px;"></div>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
-<script>
-  // ── DATA ──
-  const waterStations = [
-    { name: "Water Station Rektorat",    lat: -6.5593, lng: 106.7249, addr: "Gedung Rektorat IPB",       rating: 4.5, reviews: 28,
-      comments: [
-        { name: "Andi S.", time: "2j lalu", stars: 5, text: "Bersih banget, airnya segar! 👍" },
-        { name: "Bunga R.", time: "1hr lalu", stars: 4, text: "Bagus, tapi antriannya lumayan panjang pas siang." },
-      ]
-    },
-    { name: "Water Station Faperta",     lat: -6.5560, lng: 106.7215, addr: "Fak. Pertanian",            rating: 4.0, reviews: 14,
-      comments: [
-        { name: "Citra P.", time: "5j lalu", stars: 4, text: "Oke, mudah ditemukan." },
-      ]
-    },
-    { name: "Water Station FMIPA",       lat: -6.5541, lng: 106.7268, addr: "Fak. MIPA IPB",             rating: 4.8, reviews: 41,
-      comments: [
-        { name: "Dimas F.", time: "kemarin", stars: 5, text: "Favorit gw! Paling bersih se-IPB." },
-        { name: "Elisa T.", time: "2hr lalu", stars: 5, text: "Aliran airnya deras dan dingin 🥶" },
-      ]
-    },
-    { name: "Water Station FKH",         lat: -6.5520, lng: 106.7300, addr: "Fak. Kedokteran Hewan",     rating: 3.8, reviews: 9,
-      comments: [
-        { name: "Farhan M.", time: "3j lalu", stars: 3, text: "Perlu lebih sering dibersihkan." },
-      ]
-    },
-    { name: "Water Station Fahutan",     lat: -6.5610, lng: 106.7280, addr: "Fak. Kehutanan",            rating: 4.2, reviews: 17,
-      comments: [
-        { name: "Gilang W.", time: "1j lalu", stars: 4, text: "Dekat kantin, worth it buat isi ulang." },
-      ]
-    },
-    { name: "Water Station Graha Widya", lat: -6.5580, lng: 106.7320, addr: "Graha Widya Wisuda",        rating: 4.6, reviews: 33,
-      comments: [
-        { name: "Hani K.", time: "30m lalu", stars: 5, text: "Strategis banget lokasinya!" },
-        { name: "Irfan D.", time: "4j lalu", stars: 4, text: "Bagus, tinggal parkir aja agak susah." },
-      ]
-    },
-    { name: "Water Station Gymnasium",   lat: -6.5555, lng: 106.7240, addr: "Gymnasium IPB",             rating: 4.1, reviews: 22,
-      comments: [
-        { name: "Jasmine R.", time: "2j lalu", stars: 4, text: "Post-workout langsung isi ulang, mantap!" },
-      ]
-    },
-  ];
-
-  // ── MAP ──
-  const map = L.map('map', { zoomControl: false }).setView([-6.5575, 106.7265], 15);
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 19
-  }).addTo(map);
-
-  const makeIcon = (color, emoji, size) => L.divIcon({
-    className: '',
-    html: `<div style="background:${color};color:white;border-radius:50%;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;font-size:${size*0.5}px;border:3px solid white;box-shadow:0 3px 10px rgba(0,0,0,0.25);">${emoji}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size/2, size/2],
-    popupAnchor: [0, -size/2]
-  });
-
-  const defaultIcon  = makeIcon('#1D9E75','💧',34);
-  const nearestIcon  = makeIcon('#D85A30','⭐',38);
-  const userIcon     = makeIcon('#185FA5','📍',30);
-
-  let userMarker = null;
-  let activeStation = null;
-  let userRating = 0;
-  let nearestName = null;
-
-  const stationMarkers = waterStations.map(s => {
-    const m = L.marker([s.lat, s.lng], { icon: defaultIcon }).addTo(map);
-    m.on('click', () => openStationModal(s, null));
-    return { ...s, marker: m };
-  });
-
-  // ── FIND NEAREST ──
-  function findNearest() {
-    const btn = document.getElementById('btn-find');
-    btn.disabled = true;
-    btn.textContent = '⏳ Mencari...';
-
-    if (!navigator.geolocation) {
-      showToast('Browser tidak mendukung GPS');
-      btn.disabled = false; return;
-    }
-
-    navigator.geolocation.getCurrentPosition(pos => {
-      const uLat = pos.coords.latitude;
-      const uLng = pos.coords.longitude;
-
-      if (userMarker) userMarker.setLatLng([uLat, uLng]);
-      else userMarker = L.marker([uLat, uLng], { icon: userIcon }).addTo(map).bindPopup('📍 Lokasi Anda').openPopup();
-
-      const sorted = waterStations.map(s => ({ ...s, dist: haversine(uLat, uLng, s.lat, s.lng) })).sort((a,b) => a.dist-b.dist);
-      const nearest = sorted[0];
-      nearestName = nearest.name;
-
-      stationMarkers.forEach(sm => sm.marker.setIcon(sm.name === nearest.name ? nearestIcon : defaultIcon));
-
-      const bounds = L.latLngBounds([uLat, uLng], [nearest.lat, nearest.lng]);
-      map.fitBounds(bounds, { padding: [40, 40] });
-
-      btn.disabled = false;
-      btn.textContent = '🔄 Perbarui';
-      showToast(`✅ Terdekat: ${nearest.name} (${(nearest.dist*1000).toFixed(0)}m)`);
-
-      setTimeout(() => openStationModal(nearest, nearest.dist), 500);
-    }, err => {
-      showToast('GPS gagal: ' + err.message);
-      btn.disabled = false;
-      btn.textContent = '📍 Cari Terdekat';
-    }, { enableHighAccuracy: true, timeout: 10000 });
-  }
-
-  // ── OPEN STATION MODAL ──
-  function openStationModal(station, dist) {
-    activeStation = station;
-    userRating = 0;
-
-    document.getElementById('modal-name').textContent = station.name;
-    document.getElementById('modal-addr').textContent = station.addr;
-    document.getElementById('modal-dist').textContent = dist ? `📍 ~${(dist*1000).toFixed(0)} meter` : '📍 IPB Dramaga';
-
-    const avg = station.rating;
-    document.getElementById('modal-avg-rating').textContent = avg.toFixed(1);
-    document.getElementById('modal-rating-count').textContent = `dari ${station.reviews} ulasan`;
-
-    const starsEl = document.getElementById('display-stars');
-    starsEl.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-      const s = document.createElement('span');
-      s.className = 'star' + (i <= Math.round(avg) ? ' filled' : '');
-      s.textContent = '★';
-      starsEl.appendChild(s);
-    }
-
-    const commentsList = document.getElementById('comments-list');
-    commentsList.innerHTML = '';
-    (station.comments || []).forEach(c => {
-      const starsStr = '★'.repeat(c.stars) + '☆'.repeat(5 - c.stars);
-      commentsList.innerHTML += `
-        <div class="comment-item">
-          <div class="comment-avatar">👤</div>
-          <div class="comment-body">
-            <div><span class="comment-name">${c.name}</span><span class="comment-time">${c.time}</span></div>
-            <div class="comment-stars">${starsStr}</div>
-            <div class="comment-text">${c.text}</div>
+      <div class="icon-card" style="margin-top:20px;">
+        <div class="icon-circle" style="position:relative;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <div style="position:absolute;top:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:var(--green-mid);display:flex;align-items:center;justify-content:center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
           </div>
-        </div>`;
-    });
+        </div>
+        <h2>Buat Password Baru</h2>
+        <p class="desc">Password baru harus berbeda dari password sebelumnya</p>
+        <div class="full" style="margin-bottom:14px;">
+          <label style="font-size:14px;font-weight:500;color:var(--text-dark);display:block;margin-bottom:8px;">Password</label>
+          <div class="field-wrap" style="margin-bottom:0;">
+            <input class="field-input no-icon" type="password" placeholder="••••••••" id="new-pw"/>
+          </div>
+        </div>
+        <div class="full" style="margin-bottom:26px;">
+          <label style="font-size:14px;font-weight:500;color:var(--text-dark);display:block;margin-bottom:8px;">Confirm Password</label>
+          <div class="field-wrap" style="margin-bottom:0;">
+            <input class="field-input no-icon" type="password" placeholder="••••••••" id="confirm-pw"/>
+          </div>
+        </div>
+        <button class="btn-primary full" onclick="showSuccess()">
+          Save Password
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
 
-    document.getElementById('comment-input').value = '';
-    document.querySelectorAll('.user-star').forEach(s => s.classList.remove('selected'));
+    <!-- ===== FORGOT PASSWORD ===== -->
+    <div class="screen" id="s-forgot">
+      <button class="back-btn" onclick="go('s-login')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <div class="icon-card">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
+          </svg>
+        </div>
+        <h2>Forgot Password?</h2>
+        <p class="desc">Please enter your email address to receive a verification code</p>
+        <div class="full">
+          <label class="field-label" style="margin-bottom:8px;">Email Address</label>
+          <div class="field-wrap" style="margin-bottom:24px;">
+            <span class="field-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,12 2,6"/>
+              </svg>
+            </span>
+            <input class="field-input" type="email" placeholder="username@apps.ipb.ac.id"/>
+          </div>
+          <button class="btn-primary" onclick="go('s-verify')">Send Code</button>
+          <div style="text-align:center;margin-top:14px;">
+            <button style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-gray);text-decoration:underline;font-family:var(--font-body);">Try another way</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    document.getElementById('stationModal').classList.add('open');
-  }
+    <!-- ===== VERIFY (Forgot) ===== -->
+    <div class="screen" id="s-verify">
+      <button class="back-btn" onclick="go('s-forgot')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <div class="icon-card">
+        <div class="icon-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+          </svg>
+        </div>
+        <h2>Verification Code</h2>
+        <p class="desc">
+          Please enter the 4 digit code<br>
+          sent to: <span class="email-highlight">username@apps.ipb.ac.id</span>
+        </p>
+        <div class="otp-grid full">
+          <input class="otp-input" type="text" maxlength="1" id="otp-f-1" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-f-2" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-f-3" inputmode="numeric"/>
+          <input class="otp-input" type="text" maxlength="1" id="otp-f-4" inputmode="numeric"/>
+        </div>
+        <button class="btn-primary full" onclick="go('s-newpass')">Verify Code</button>
+        <div class="timer-wrap">
+          <div class="timer-count" id="forgot-timer">00 : 40</div>
+          <button class="resend-btn" id="forgot-resend" disabled>Resend code</button>
+        </div>
+      </div>
+    </div>
 
-  function closeStation() {
-    document.getElementById('stationModal').classList.remove('open');
-  }
+    <!-- ===== NEW PASSWORD (Forgot) ===== -->
+    <div class="screen" id="s-newpass">
+      <button class="back-btn" onclick="go('s-verify')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <div class="icon-card">
+        <div class="icon-circle" style="position:relative;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <div style="position:absolute;top:-4px;right:-4px;width:24px;height:24px;border-radius:50%;background:var(--green-mid);display:flex;align-items:center;justify-content:center;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+        </div>
+        <h2>Create New Password</h2>
+        <p class="desc">New password must be different from last password</p>
+        <div class="full" style="margin-bottom:14px;">
+          <label style="font-size:14px;font-weight:500;color:var(--text-dark);display:block;margin-bottom:8px;">Password</label>
+          <div class="field-wrap" style="margin-bottom:0;">
+            <input class="field-input no-icon" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <div class="full" style="margin-bottom:26px;">
+          <label style="font-size:14px;font-weight:500;color:var(--text-dark);display:block;margin-bottom:8px;">Confirm Password</label>
+          <div class="field-wrap" style="margin-bottom:0;">
+            <input class="field-input no-icon" type="password" placeholder="••••••••"/>
+          </div>
+        </div>
+        <button class="btn-primary full" onclick="go('s-login')">
+          Save Password
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
 
-  // ── USER STARS ──
-  document.querySelectorAll('.user-star').forEach(s => {
-    s.addEventListener('click', () => {
-      userRating = parseInt(s.dataset.v);
-      document.querySelectorAll('.user-star').forEach((el, i) => {
-        el.classList.toggle('selected', i < userRating);
-      });
-    });
-  });
+  </div><!-- /phone-shell -->
+</div><!-- /auth-wrapper -->
 
-  // ── SUBMIT COMMENT ──
-  function submitComment() {
-    const text = document.getElementById('comment-input').value.trim();
-    if (!text) { showToast('⚠️ Tulis komentar dulu'); return; }
-    if (!userRating) { showToast('⚠️ Beri rating dulu'); return; }
 
-    if (activeStation) {
-      activeStation.comments.unshift({ name: 'Kamu', time: 'baru saja', stars: userRating, text });
-      activeStation.reviews++;
-      openStationModal(activeStation, null);
-    }
-    showToast('✅ Ulasan berhasil dikirim!');
-  }
+<!-- ============================================================
+     MAIN APP
+     ============================================================ -->
+<div id="main-app">
 
-  // ── REPORT ──
-  function openReport() {
-    document.getElementById('report-station-name').textContent = activeStation?.name || '';
-    document.getElementById('stationModal').classList.remove('open');
-    document.getElementById('reportModal').classList.add('open');
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-    document.getElementById('report-name').value = '';
-    document.getElementById('report-contact').value = '';
-    document.getElementById('report-desc').value = '';
-    document.getElementById('report-urgency').value = '';
-  }
+  <!-- Sidebar overlay & drawer -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <svg viewBox="0 0 40 40" fill="none" width="32" height="32">
+        <circle cx="20" cy="20" r="20" fill="#E1F5EE"/>
+        <path d="M20 8C20 8 12 16 12 23C12 27.4 15.6 31 20 31C24.4 31 28 27.4 28 23C28 16 20 8 20 8Z" fill="#1D9E75"/>
+        <path d="M20 14C20 14 15 19.5 15 23.5C15 26.5 17.2 29 20 29" fill="#0F6E56"/>
+        <circle cx="20" cy="24" r="3" fill="white" opacity="0.6"/>
+      </svg>
+      <span class="sidebar-logo-text">Wmap</span>
+    </div>
+    <div class="sidebar-search">
+      <span class="sidebar-search-icon">🔍</span>
+      <input placeholder="Search Menu..." id="sidebarSearchInput"/>
+      <button>🔍</button>
+    </div>
+    <div class="sidebar-menu">
+      <button class="sidebar-item" onclick="closeSidebar()"><span class="sidebar-item-icon">🏠</span> Dashboard</button>
+      <button class="sidebar-item active" onclick="closeSidebar()"><span class="sidebar-item-icon">🗺</span> Facility Map</button>
 
-  function toggleChip(el) { el.classList.toggle('selected'); }
+      <div class="sidebar-group" onclick="toggleSidebarGroup(this)">
+        <button class="sidebar-item" style="width:100%;justify-content:flex-start;">
+          <span class="sidebar-item-icon">⚡</span> Activity
+          <span class="sidebar-chevron">▾</span>
+        </button>
+        <div class="sidebar-sub">
+          <button class="sidebar-sub-item">Refill History</button>
+          <button class="sidebar-sub-item">Reports History</button>
+          <button class="sidebar-sub-item">Review History</button>
+        </div>
+      </div>
 
-  function submitReport() {
-    const name = document.getElementById('report-name').value.trim();
-    const desc = document.getElementById('report-desc').value.trim();
-    const urgency = document.getElementById('report-urgency').value;
-    const chips = [...document.querySelectorAll('.chip.selected')].map(c => c.textContent);
+      <div class="sidebar-group" onclick="toggleSidebarGroup(this)">
+        <button class="sidebar-item" style="width:100%;justify-content:flex-start;">
+          <span class="sidebar-item-icon">🏆</span> Points &amp; Leaderboard
+          <span class="sidebar-chevron">▾</span>
+        </button>
+        <div class="sidebar-sub">
+          <button class="sidebar-sub-item">My Points</button>
+          <button class="sidebar-sub-item">Leaderboard</button>
+          <button class="sidebar-sub-item">Achievements</button>
+        </div>
+      </div>
 
-    if (!name) { showToast('⚠️ Nama wajib diisi'); return; }
-    if (!desc) { showToast('⚠️ Deskripsi wajib diisi'); return; }
-    if (!urgency) { showToast('⚠️ Pilih tingkat urgensi'); return; }
+      <div class="sidebar-group" onclick="toggleSidebarGroup(this)">
+        <button class="sidebar-item" style="width:100%;justify-content:flex-start;">
+          <span class="sidebar-item-icon">📋</span> Reports &amp; Feedback
+          <span class="sidebar-chevron">▾</span>
+        </button>
+        <div class="sidebar-sub">
+          <button class="sidebar-sub-item">Report Facility Issue</button>
+          <button class="sidebar-sub-item">View Report</button>
+          <button class="sidebar-sub-item">Submit Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    document.getElementById('reportModal').classList.remove('open');
-    showToast('🚨 Laporan berhasil dikirim!');
-  }
+  <!-- App header -->
+  <div class="header">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="header-icons">
+      <button class="icon-btn bell" aria-label="Notifikasi">🔔</button>
+      <div class="avatar-placeholder">ZZ</div>
+    </div>
+  </div>
 
-  // ── CLOSE MODALS ON OVERLAY CLICK ──
-  document.getElementById('stationModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) closeStation();
-  });
-  document.getElementById('reportModal').addEventListener('click', e => {
-    if (e.target === e.currentTarget) document.getElementById('reportModal').classList.remove('open');
-  });
+  <!-- Scrollable content -->
+  <div class="content">
 
-  // ── TOAST ──
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2800);
-  }
+    <!-- Greeting -->
+    <div class="greeting">
+      <div class="greeting-sub">You've made a real contribution today</div>
+      <div class="greeting-name">Hello, Ziggy 👋</div>
+    </div>
 
-  // ── HAVERSINE ──
-  function haversine(lat1,lng1,lat2,lng2) {
-    const R=6371, dLat=toRad(lat2-lat1), dLng=toRad(lng2-lng1);
-    const a=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLng/2)**2;
-    return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-  }
-  function toRad(d){ return d*Math.PI/180; }
-</script>
+    <!-- Hero card -->
+    <div class="hero-card">
+      <div class="hero-card-leaves">
+        <div class="hero-card-leaf l1"></div>
+        <div class="hero-card-leaf l2"></div>
+      </div>
+      <div style="position:relative;z-index:1;">
+        <div class="hero-label">🍃 Plastic Bottles Saved</div>
+        <div class="hero-number">124</div>
+        <div class="hero-badge">⬆ +12 Bottles This Week</div>
+      </div>
+    </div>
+
+    <!-- Mini stats -->
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <div class="mini-stat-icon">⚡</div>
+        <div><div class="mini-stat-num">2,450</div><div class="mini-stat-lbl">Eco Points</div></div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-icon blue-bg">📊</div>
+        <div><div class="mini-stat-num">#12</div><div class="mini-stat-lbl">Rank</div></div>
+      </div>
+    </div>
+
+    <!-- Fun fact -->
+    <div class="fun-fact">
+      <div class="fun-fact-icon">💡</div>
+      <div>
+        <div class="fun-fact-label">Daily Fun Fact</div>
+        <div class="fun-fact-text">Recycling just one aluminium can saves enough energy to power a TV for three hours</div>
+      </div>
+    </div>
+
+    <!-- Map section -->
+    <div class="section-header">
+      <span class="section-title">🗺 Peta IPB</span>
+      <div style="display:flex;gap:6px;">
+        <button id="btnToggleWater" class="map-filter-btn active-water" onclick="toggleLayer('water')">💧 Air</button>
+        <button id="btnToggleTrash" class="map-filter-btn active-trash" onclick="toggleLayer('trash')">🗑 Sampah</button>
+      </div>
+    </div>
+
+<div class="map-search-wrap">
+  <span class="map-search-icon">🔍</span>
+  <input
+    class="map-search-input"
+    type="text"
+    placeholder="Cari water station atau tempat sampah..."
+    oninput="searchStations(this.value)"
+    onfocus="searchStations(this.value)"
+    onblur="setTimeout(() => closeSearchDropdown(), 150)"
+  />
+  <div class="map-search-dropdown" id="mapSearchDropdown"></div>
+</div>
+
+    <div class="map-card">
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-item"><span class="legend-icon">💧</span> Water Refill</div>
+        <div class="legend-item"><div class="legend-dot green"></div>Active</div>
+        <div class="legend-item"><div class="legend-dot red"></div>Inactive</div>
+        <div class="legend-item"><div class="legend-dot brown"></div>Repair</div>
+      </div>
+      <div class="accuracy-label" id="accuracyLabel"></div>
+      <div class="route-panel" id="routePanel">
+        <div class="route-dest" id="routeDest">—</div>
+        <div class="route-stats">
+          <div class="route-dist" id="routeDist">—</div>
+          <div class="route-time" id="routeTime"></div>
+        </div>
+        <div class="route-mode">
+          <button class="mode-btn active" data-mode="foot-walking"    onclick="switchMode(this)">🚶</button>
+          <button class="mode-btn"        data-mode="cycling-regular" onclick="switchMode(this)">🚴</button>
+          <button class="mode-btn"        data-mode="driving-car"     onclick="switchMode(this)">🚗</button>
+        </div>
+        <button class="route-clear" onclick="clearRoute()">✕</button>
+      </div>
+      <div class="map-overlay-btns">
+        <button class="map-btn secondary" id="btnCenter"       onclick="centerOnUser()"    style="display:none;">🎯 Saya</button>
+        <button class="map-btn"           id="btnNearest"      onclick="goToNearest()"     style="display:none;">💧 Air</button>
+        <button class="map-btn trash-btn" id="btnNearestTrash" onclick="goToNearestTrash()" style="display:none;">🗑 Sampah</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="section-header">
+      <span class="section-title">🏆 Leaderboard</span>
+      <span class="view-all">View All</span>
+    </div>
+    <div class="leaderboard-list">
+      <div class="lb-item">
+        <div class="lb-rank gold">1</div>
+        <div class="lb-avatar">🧑</div>
+        <div class="lb-info"><div class="lb-name">Ziggy Zagga</div><div class="lb-role">You</div></div>
+        <div style="text-align:right;"><div class="lb-pts">2,450</div><div class="lb-pts-lbl">POINTS</div></div>
+      </div>
+      <div class="lb-item">
+        <div class="lb-rank silver">2</div>
+        <div class="lb-avatar">👩</div>
+        <div class="lb-info"><div class="lb-name">Khautal</div><div class="lb-role">TOP RECYCLER</div></div>
+        <div style="text-align:right;"><div class="lb-pts">2,150</div><div class="lb-pts-lbl">POINTS</div></div>
+      </div>
+      <div class="lb-item">
+        <div class="lb-rank bronze">3</div>
+        <div class="lb-avatar">👦</div>
+        <div class="lb-info"><div class="lb-name">Krespo</div><div class="lb-role">ECO WARRIOR</div></div>
+        <div style="text-align:right;"><div class="lb-pts">2,000</div><div class="lb-pts-lbl">POINTS</div></div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="section-header">
+      <span class="section-title">⚡ Recent Activity</span>
+      <span class="view-all">View All</span>
+    </div>
+    <div class="activity-list">
+      <div class="act-item">
+        <div class="act-icon">💧</div>
+        <div class="act-info"><div class="act-name">Refill water at Fmipa Kering</div><div class="act-time">2 hour ago · 500ml refilled</div></div>
+        <div class="act-pts">+10 pt</div>
+      </div>
+      <div class="act-item">
+        <div class="act-icon">💧</div>
+        <div class="act-info"><div class="act-name">Refill water at Fapet</div><div class="act-time">Yesterday · 500ml refilled</div></div>
+        <div class="act-pts">+10 pt</div>
+      </div>
+      <div class="act-item">
+        <div class="act-icon recycle">♻️</div>
+        <div class="act-info"><div class="act-name">Deposit Bottle Waste</div><div class="act-time">Yesterday · Common Classroom</div></div>
+        <div class="act-pts">+10 pt</div>
+      </div>
+    </div>
+
+    <!-- Green Campus News -->
+    <div class="section-header">
+      <span class="section-title">🌿 Green Campus News</span>
+      <span class="view-all">View All</span>
+    </div>
+    <div class="news-scroll">
+      <div class="news-card">
+        <div class="news-card-bg">🌳</div>
+        <div class="news-card-overlay">
+          <div class="news-card-title">1000 Trees Planting Next Month</div>
+          <div class="news-card-sub">Read more about our sustainability initiatives</div>
+        </div>
+      </div>
+      <div class="news-card">
+        <div class="news-card-bg" style="background:linear-gradient(135deg,#185FA5,#0C447C);">♻️</div>
+        <div class="news-card-overlay">
+          <div class="news-card-title">Zero Waste Campus 2025 Goal</div>
+          <div class="news-card-sub">IPB targets 90% waste reduction</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:16px;"></div>
+  </div><!-- /content -->
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <button class="nav-item active"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-item"><span class="nav-icon">🗺</span>Map</button>
+    <button class="nav-item"><span class="nav-icon">📊</span>Stats</button>
+    <button class="nav-item" onclick="showTab('profile', this)"><span class="nav-icon">👤</span>Profile</button>
+  </div>
+
+  <!-- ===== STATION MODAL ===== -->
+  <div class="modal-overlay" id="stationModal">
+    <div class="modal-sheet" style="padding:0 0 0;">
+      <div class="modal-handle"></div>
+      <div class="station-map-preview"><div id="modalMiniMap"></div></div>
+      <div class="station-info">
+        <div class="station-name" id="modal-name">Water Station</div>
+        <div class="station-rating-row">
+          <span class="rating-num-sm" id="modal-avg-rating">5.0</span>
+          <span class="rating-stars-sm" id="modal-stars-sm">★★★★★</span>
+          <span class="rating-count-sm" id="modal-rating-count">(0)</span>
+        </div>
+        <div class="station-addr" id="modal-addr"></div>
+        
+      </div>
+      <div class="station-actions">
+        <button class="action-btn primary" onclick="navigateToActive()">🗺 Directions</button>
+        <button class="action-btn" onclick="logStart()">▲ Start</button>
+        <button class="action-btn" onclick="logRefill()">➕ Log Refill</button>
+        <button class="action-btn danger" onclick="openReport()">⚠ Report Issue</button>
+      </div>
+      <div class="station-photos">
+        <div class="station-photo">🚰</div>
+        <div class="add-photo-btn"><span>📷</span>Add a photo</div>
+      </div>
+      <div class="station-address-row">
+        <span class="addr-icon">📍</span>
+        <span class="addr-text" id="modal-full-addr">Babakan, Dramaga, Bogor Regency, West Java 16680</span>
+      </div>
+      <div class="review-section">
+        <div class="review-header">
+          <span class="review-title">Review summary</span>
+          <button class="add-review-btn" onclick="openAddReview()">Add review</button>
+        </div>
+        <div class="review-big">
+          <div class="review-avg-num" id="review-avg-big">5.0</div>
+          <div class="review-bar-wrap" id="review-bars"></div>
+        </div>
+        <div class="rating-label" style="font-size:13px;font-weight:700;margin-bottom:8px;">Rate</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div class="reviewer-avatar" style="width:32px;height:32px;font-size:12px;font-weight:700;">ZZ</div>
+          <div id="quick-stars" style="display:flex;gap:4px;"></div>
+        </div>
+      </div>
+      <div class="review-section" style="padding-top:4px;"><div class="review-title">Reviews</div></div>
+      <div class="comments-list" id="comments-list"></div>
+      <button class="see-all-reviews">See all reviews</button>
+      <div style="height:20px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== ADD REVIEW MODAL ===== -->
+  <div class="add-review-overlay" id="addReviewModal">
+    <div class="add-review-header">
+      <button class="add-review-close" onclick="closeAddReview()">✕</button>
+      <div class="add-review-title" id="add-review-station-name">Station Name</div>
+    </div>
+    <div class="add-review-body">
+      <div class="reviewer-row">
+        <div class="reviewer-avatar">ZZ</div>
+        <div class="reviewer-name">Ziggy Zagga</div>
+      </div>
+      <div class="big-stars" id="big-stars">
+        <span class="big-star" data-v="1">☆</span>
+        <span class="big-star" data-v="2">☆</span>
+        <span class="big-star" data-v="3">☆</span>
+        <span class="big-star" data-v="4">☆</span>
+        <span class="big-star" data-v="5">☆</span>
+      </div>
+      <textarea class="review-textarea" id="review-text" rows="4" placeholder="Choose a rating first, then add a review"></textarea>
+      <button class="add-media-btn">📷 Add photos &amp; videos</button>
+    </div>
+    <div class="add-review-footer">
+      <button class="post-btn" onclick="submitReview()">Post</button>
+    </div>
+  </div>
+
+  <!-- ===== TRASH MODAL ===== -->
+  <div class="modal-overlay" id="trashModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="padding:16px 20px 14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="font-size:24px;">🗑</span>
+          <div>
+            <div class="station-name" id="trash-modal-name">Tempat Sampah</div>
+            <div class="station-addr" id="trash-modal-addr"></div>
+          </div>
+        </div>
+        <div id="trash-modal-dist" style="display:inline-flex;align-items:center;gap:5px;background:#F3EDE8;color:#6B4226;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;margin-top:6px;">🗑 IPB Dramaga</div>
+      </div>
+      <div style="padding:0 20px 16px;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:8px;">Informasi</div>
+        <div style="font-size:13px;color:#555;line-height:1.6;">Titik pembuangan sampah terdekat. Pastikan membuang sampah sesuai jenisnya — organik, anorganik, dan B3.</div>
+        <div class="trash-info-chips">
+          <div class="waste-chip organic">🌿 Organik</div>
+          <div class="waste-chip anorganic">♻️ Anorganik</div>
+          <div class="waste-chip b3">⚠️ B3</div>
+        </div>
+      </div>
+      <div style="padding:14px 20px;display:flex;gap:10px;">
+        <button class="action-btn primary" style="flex:1;" onclick="navigateToTrash()">🗺 Rute ke Sini</button>
+        <button class="action-btn" onclick="document.getElementById('trashModal').classList.remove('open')">✕ Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REPORT MODAL ===== -->
+  <div class="modal-overlay" id="reportModal">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div style="padding:0 20px 14px;border-bottom:1px solid var(--border);">
+        <div style="font-size:17px;font-weight:800;color:var(--orange);">🚨 Laporkan Masalah</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:3px;" id="report-station-name"></div>
+      </div>
+      <div class="report-form">
+        <div class="form-group">
+          <label class="form-label">Jenis Masalah</label>
+          <div class="issue-chips" id="issue-chips">
+            <div class="chip" onclick="toggleChip(this)">Mesin rusak</div>
+            <div class="chip" onclick="toggleChip(this)">Air tidak keluar</div>
+            <div class="chip" onclick="toggleChip(this)">Kotor / tidak higienis</div>
+            <div class="chip" onclick="toggleChip(this)">Antrian panjang</div>
+            <div class="chip" onclick="toggleChip(this)">Lokasi sulit dijangkau</div>
+            <div class="chip" onclick="toggleChip(this)">Lainnya</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nama Pelapor</label>
+          <input class="form-input" placeholder="Nama kamu..." id="report-name"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kontak (opsional)</label>
+          <input class="form-input" placeholder="Email / No. HP" id="report-contact"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deskripsi Masalah</label>
+          <textarea class="form-textarea" rows="4" placeholder="Ceritakan masalah yang kamu temukan..." id="report-desc"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tingkat Urgensi</label>
+          <select class="form-select" id="report-urgency">
+            <option value="">Pilih tingkat urgensi</option>
+            <option value="low">🟢 Rendah — bisa ditunda</option>
+            <option value="medium">🟡 Sedang — perlu diperbaiki</option>
+            <option value="high">🔴 Tinggi — segera diperbaiki!</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding:0 20px 20px;">
+        <button style="width:100%;padding:14px;background:var(--orange);color:white;border:none;border-radius:12px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;" onclick="submitReport()">
+          📤 Kirim Laporan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== PROFILE PANEL ===== -->
+<div class="profile-panel" id="profilePanel">
+  <div class="profile-header">
+    <div class="profile-avatar">ZZ</div>
+    <div class="profile-name">Ziggy Zagga</div>
+    <div class="profile-email" id="profile-email-display">—</div>
+  </div>
+
+  <div class="profile-menu">
+    <button class="profile-menu-item">
+      <span>👤</span> Edit Profil <span class="pmenu-arrow">›</span>
+    </button>
+    <button class="profile-menu-item">
+      <span>🔔</span> Notifikasi <span class="pmenu-arrow">›</span>
+    </button>
+    <button class="profile-menu-item">
+      <span>🔒</span> Ubah Password <span class="pmenu-arrow">›</span>
+    </button>
+  </div>
+
+  <div style="padding: 0 20px;">
+    <button class="btn-logout" onclick="handleLogout()">
+      🚪 Keluar dari Akun
+    </button>
+  </div>
+</div>
+
+</div><!-- /main-app -->
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+<!-- App JS -->
+<script src="script3.js"></script>
+
 </body>
 </html>
