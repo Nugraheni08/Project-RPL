@@ -1,0 +1,5 @@
+# ignore "node_modules" di folder backend
+Apps/backend/node_modules/
+
+# ignore file database di folder backend
+Apps/backend/.env
