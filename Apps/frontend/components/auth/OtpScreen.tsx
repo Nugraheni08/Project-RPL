@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import styles from '@/styles/auth.module.css';
 
@@ -106,34 +105,25 @@ export default function OtpScreen({ isActive, isExiting, onNavigate, email, onSu
       const username        = sessionStorage.getItem('pending_reg_username');
 
       if (!pendingEmail || !password) throw new Error('Sesi pendaftaran tidak valid, silakan ulangi dari awal.');
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: pendingEmail,
-        password,
-        options: { 
-          data: { 
-            role: role === 'dosen' ? 'Dosen' : 'Mahasiswa', 
-            identifier_number: identifier,
-            username: username
-          } 
-        }
-      });
-      
-      if (error) throw error;
 
-      // Update row di public.users (sudah auto-dibuat oleh trigger on_auth_user_created)
-      // dengan data tambahan: username, role, nim/nip, is_verified
-      if (data.user) {
-        await supabase
-          .from('users')
-          .update({
-            username: username,
-            role: role === 'dosen' ? 'Dosen' : 'Mahasiswa',
-            nim: role === 'mahasiswa' ? identifier : null,
-            nip: role === 'dosen' ? identifier : null,
-            is_verified: true
-          })
-          .eq('id', data.user.id);
+      // Panggil server-side API route untuk membuat user via service_role key
+      // (Operasi database dilakukan di server sehingga error tampil di Vercel Runtime Logs)
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: pendingEmail,
+          password,
+          role: role === 'dosen' ? 'Dosen' : 'Mahasiswa',
+          identifier: identifier || '',
+          username,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal membuat akun. Silakan coba lagi.');
       }
 
       sessionStorage.removeItem('pending_reg_email');
@@ -143,6 +133,7 @@ export default function OtpScreen({ isActive, isExiting, onNavigate, email, onSu
       sessionStorage.removeItem('pending_reg_username');
       onSuccess?.();
     } catch (error: any) {
+      console.error('OTP_VERIFY_ERROR:', error);
       setErrorMsg(error.message || 'Gagal membuat akun. Silakan coba lagi.');
     } finally {
       setIsLoading(false);

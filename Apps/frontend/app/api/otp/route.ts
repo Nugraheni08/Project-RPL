@@ -62,7 +62,11 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    console.error("Error internal API route:", error);
+    console.error("OTP_DETAILED_SERVER_ERROR:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      raw: error,
+    });
     return NextResponse.json(
       { error: 'Terjadi kesalahan pada server' },
       { status: 500 }
