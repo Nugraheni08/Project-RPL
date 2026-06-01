@@ -1,87 +1,132 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
 import styles from '@/styles/history.module.css';
 
-/* ============================================================
-   DYNAMIC ACTIVITY DATA ARRAY
-   ============================================================ */
-var USER_ACTIVITIES = [
-  {
-    id: 1,
-    type: 'water',
-    icon: '💧',
-    name: 'Refill water at Fmipa Kering',
-    time: '2 hour ago',
-    pts: '+10 pt',
-  },
-  {
-    id: 2,
-    type: 'water',
-    icon: '💧',
-    name: 'Refill water at Fapet',
-    time: 'Yesterday',
-    pts: '+10 pt',
-  },
-  {
-    id: 3,
-    type: 'recycle',
-    icon: '♻️',
-    name: 'Deposit Bottle Waste',
-    time: 'Yesterday',
-    pts: '+10 pt',
-  },
-  {
-    id: 4,
-    type: 'water',
-    icon: '💧',
-    name: 'Refill water at Common Classroom',
-    time: '2 days ago',
-    pts: '+10 pt',
-  },
-  {
-    id: 5,
-    type: 'recycle',
-    icon: '♻️',
-    name: 'Deposit Bottle Waste at Fahutan',
-    time: '3 days ago',
-    pts: '+10 pt',
-  },
-];
-
-/* Dynamic counters */
-var TOTAL_REFILLS = 42;
-var TOTAL_WASTE = 10;
-var TOTAL_ECO_POINTS = 430;
+interface Activity {
+  id: string;
+  type: string;
+  icon: string;
+  name: string;
+  time: string;
+  pts: string;
+  created_at: string;
+}
 
 export default function HistoryPage() {
   var router = useRouter();
-  var [isLoading, setIsLoading] = useState(true);
+  var [loading, setLoading] = useState(true);
+  var [error, setError] = useState('');
+  var [monthlyRefills, setMonthlyRefills] = useState(0);
+  var [monthlyWaste, setMonthlyWaste] = useState(0);
+  var [monthlyPoints, setMonthlyPoints] = useState(0);
+  var [activities, setActivities] = useState<Activity[]>([]);
   var [visibleCount, setVisibleCount] = useState(3);
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  var channelRef = useRef<any>(null);
+  var userIdRef = useRef<string>('');
 
+  var TARGET_REFILLS = 50;
+  var TARGET_WASTE = 20;
+  var TARGET_POINTS = 1000;
+
+  // ── Fetch data ———————————————————————————————————————————————
+  var fetchHistory = async function () {
+    try {
+      var res = await fetch('/api/user/history');
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal memuat riwayat.');
+
+      setMonthlyRefills(json.monthlyRefills || 0);
+      setMonthlyWaste(json.monthlyWaste || 0);
+      setMonthlyPoints(json.monthlyPoints || 0);
+      setActivities(json.activities || []);
+    } catch (err: unknown) {
+      var msg = err instanceof Error ? err.message : 'Gagal memuat.';
+      setError(msg);
+      console.error('HISTORY_FETCH_ERROR:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Initial load + real-time channel ———————————————————————————
   useEffect(function () {
-    var checkAuth = async function () {
-      var result = await supabase.auth.getSession();
-      var currentSession = result.data.session;
+    var init = async function () {
+      // 1) Auth check
+      var sessionResult = await supabase.auth.getSession();
+      var currentSession = sessionResult.data.session;
       if (!currentSession) {
         router.replace('/auth');
         return;
       }
-      setIsLoading(false);
+      userIdRef.current = currentSession.user.id;
+
+      // 2) Fetch initial
+      await fetchHistory();
+
+      // 3) Real-time listener
+      var channel = supabase
+        .channel('user-history-' + userIdRef.current)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'refill_activity', filter: 'user_id=eq.' + userIdRef.current },
+          function () {
+            fetchHistory();
+          }
+        )
+        .subscribe();
+
+      channelRef.current = channel;
     };
-    checkAuth();
+
+    init();
+
+    return function () {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [router]);
 
-  if (isLoading) {
-    return <div style={{ minHeight: '100vh', background: '#E8F5EF' }} />;
+  // ── Loading state ——————————————————————————————————————————————
+  if (loading) {
+    return (
+      <div id="main-app">
+        <div className={styles['history-page']} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', animation: 'spin 1s linear infinite' }}>⏳</div>
+            <p style={{ marginTop: '12px', fontSize: '14px', color: '#8B9E96', fontWeight: 600 }}>Memuat riwayat...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  var visibleActivities = USER_ACTIVITIES.slice(0, visibleCount);
-  var hasMore = visibleCount < USER_ACTIVITIES.length;
+  // ── Error state ————————————————————————————————————————————————
+  if (error) {
+    return (
+      <div id="main-app">
+        <div className={styles['history-page']} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: '#E24B4A', fontWeight: 700 }}>⚠️ {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Progress percentages ———————————————————————————————————————
+  var refillPct = Math.min(100, Math.round((monthlyRefills / TARGET_REFILLS) * 100));
+  var wastePct = Math.min(100, Math.round((monthlyWaste / TARGET_WASTE) * 100));
+  var pointsPct = Math.min(100, Math.round((monthlyPoints / TARGET_POINTS) * 100));
+
+  var visibleActivities = activities.slice(0, visibleCount);
+  var hasMore = visibleCount < activities.length;
 
   return (
     <div id="main-app">
@@ -111,9 +156,9 @@ export default function HistoryPage() {
               <div className={styles['hist-goal-icon-circle'] + ' ' + styles['blue-bg']}>💧</div>
               <span className={styles['hist-goal-label']}>Monthly Goal</span>
             </div>
-            <div className={styles['hist-goal-value'] + ' ' + styles.blue}>{TOTAL_REFILLS} Refills</div>
+            <div className={styles['hist-goal-value'] + ' ' + styles.blue}>{monthlyRefills} Refills</div>
             <div className={styles['hist-progress-bar']}>
-              <div className={styles['hist-progress-fill'] + ' ' + styles.blue} style={{ width: '70%' }}></div>
+              <div className={styles['hist-progress-fill'] + ' ' + styles.blue} style={{ width: refillPct + '%' }}></div>
             </div>
           </div>
 
@@ -125,9 +170,9 @@ export default function HistoryPage() {
                 <div className={styles['hist-goal-icon-circle'] + ' ' + styles['green-bg']}>🗑️</div>
                 <span className={styles['hist-goal-label']}>Monthly Goal</span>
               </div>
-              <div className={styles['hist-goal-value-sm'] + ' ' + styles.green}>{TOTAL_WASTE} Waste Disposed</div>
+              <div className={styles['hist-goal-value-sm'] + ' ' + styles.green}>{monthlyWaste} Waste Disposed</div>
               <div className={styles['hist-progress-bar']}>
-                <div className={styles['hist-progress-fill'] + ' ' + styles.green} style={{ width: '50%' }}></div>
+                <div className={styles['hist-progress-fill'] + ' ' + styles.green} style={{ width: wastePct + '%' }}></div>
               </div>
             </div>
 
@@ -137,9 +182,9 @@ export default function HistoryPage() {
                 <div className={styles['hist-goal-icon-circle'] + ' ' + styles['green-solid']}>⭐</div>
                 <span className={styles['hist-goal-label']}>Monthly Goal</span>
               </div>
-              <div className={styles['hist-goal-value-sm'] + ' ' + styles.dark}>{TOTAL_ECO_POINTS} Eco Points</div>
+              <div className={styles['hist-goal-value-sm'] + ' ' + styles.dark}>{monthlyPoints} Eco Points</div>
               <div className={styles['hist-progress-bar']}>
-                <div className={styles['hist-progress-fill'] + ' ' + styles['dark-gray']} style={{ width: '43%' }}></div>
+                <div className={styles['hist-progress-fill'] + ' ' + styles['dark-gray']} style={{ width: pointsPct + '%' }}></div>
               </div>
             </div>
           </div>
@@ -153,20 +198,26 @@ export default function HistoryPage() {
           </div>
 
           <div className={styles['hist-activity-card']}>
-            {visibleActivities.map(function (item) {
-              return (
-                <div key={item.id} className={styles['hist-act-item']}>
-                  <div className={styles['hist-act-badge'] + ' ' + styles[item.type]}>
-                    {item.icon}
+            {visibleActivities.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '24px', color: '#8B9E96', fontSize: '13px' }}>
+                Belum ada aktivitas bulan ini.
+              </div>
+            ) : (
+              visibleActivities.map(function (item) {
+                return (
+                  <div key={item.id} className={styles['hist-act-item']}>
+                    <div className={styles['hist-act-badge'] + ' ' + styles[item.type]}>
+                      {item.icon}
+                    </div>
+                    <div className={styles['hist-act-info']}>
+                      <div className={styles['hist-act-name']}>{item.name}</div>
+                      <div className={styles['hist-act-time']}>{item.time}</div>
+                    </div>
+                    <div className={styles['hist-act-pts']}>{item.pts}</div>
                   </div>
-                  <div className={styles['hist-act-info']}>
-                    <div className={styles['hist-act-name']}>{item.name}</div>
-                    <div className={styles['hist-act-time']}>{item.time}</div>
-                  </div>
-                  <div className={styles['hist-act-pts']}>{item.pts}</div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
 
           {hasMore ? (
@@ -187,7 +238,7 @@ export default function HistoryPage() {
                 cursor: 'pointer',
                 fontFamily: 'inherit',
               }}
-              onClick={function () { setVisibleCount(USER_ACTIVITIES.length); }}
+              onClick={function () { setVisibleCount(activities.length); }}
             >
               Load More Activity
             </button>

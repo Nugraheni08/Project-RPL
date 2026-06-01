@@ -9,28 +9,18 @@ export async function POST(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
     if (!supabaseUrl || !serviceRoleKey) {
-      console.error('REVIEW_SUBMIT_ERROR: Missing environment variables.');
       return NextResponse.json({ error: 'Konfigurasi server tidak lengkap.' }, { status: 500 });
     }
 
     // ── Step 1: Verifikasi user via cookie-based client ────────────
     const cookieStore = cookies();
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-      global: {
-        headers: {
-          Cookie: cookieStore.toString(),
-        },
-      },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: { headers: { Cookie: cookieStore.toString() } },
     });
 
     const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
     if (sessionError || !sessionData?.user) {
-      console.error('REVIEW_SUBMIT_ERROR — Auth failed:', sessionError);
       return NextResponse.json({ error: 'Tidak terautentikasi.' }, { status: 401 });
     }
 
@@ -38,13 +28,16 @@ export async function POST(request: Request) {
 
     // ── Step 2: Parse body ─────────────────────────────────────────
     const body = await request.json();
-    const { facilityId, rating, comment } = body;
+    const { facilityType, locationRef, description } = body;
 
-    if (!facilityId) {
-      return NextResponse.json({ error: 'Facility ID diperlukan.' }, { status: 400 });
+    if (!facilityType) {
+      return NextResponse.json({ error: 'Tipe fasilitas wajib dipilih.' }, { status: 400 });
     }
-    if (!rating || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'Rating (1-5) wajib diisi.' }, { status: 400 });
+    if (!locationRef) {
+      return NextResponse.json({ error: 'Lokasi fasilitas wajib dipilih.' }, { status: 400 });
+    }
+    if (!description?.trim()) {
+      return NextResponse.json({ error: 'Deskripsi masalah wajib diisi.' }, { status: 400 });
     }
 
     // ── Step 3: Insert via service_role client ─────────────────────
@@ -52,22 +45,14 @@ export async function POST(request: Request) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: userRow } = await serviceSupabase
-      .from('users')
-      .select('username')
-      .eq('id', userId)
-      .single();
-
-    const userName = userRow?.username || sessionData.user.email?.split('@')[0] || 'User';
-
     const { data, error } = await serviceSupabase
-      .from('reviews')
+      .from('reports')
       .insert({
         user_id: userId,
-        facility_id: facilityId,
-        stars: rating,
-        comment: comment?.trim() || '',
-        status: 'APPROVED',
+        facility_type: facilityType,
+        location_ref: locationRef,
+        description: description.trim(),
+        status: 'PENDING',
         created_at: new Date().toISOString(),
       })
       .select()
@@ -75,32 +60,24 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error(
-        'REVIEW_SUBMIT_ERROR — Insert gagal:',
+        'REPORT_SUBMIT_ERROR:',
         JSON.stringify(error, null, 2)
       );
       return NextResponse.json(
-        { error: `Gagal menyimpan ulasan: ${error.message}` },
+        { error: `Gagal menyimpan laporan: ${error.message}` },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Ulasan berhasil dikirim!',
-      review: {
-        id: data.id,
-        user_id: userId,
-        user_name: userName,
-        facility_id: facilityId,
-        stars: rating,
-        comment: comment?.trim() || '',
-        created_at: data.created_at,
-      },
+      message: 'Laporan berhasil dikirim!',
+      report: data,
     });
   } catch (error) {
-    console.error('REVIEW_SUBMIT_ERROR — Unhandled exception:', error);
+    console.error('REPORT_SUBMIT_ERROR — Unhandled:', error);
     return NextResponse.json(
-      { error: 'Terjadi kesalahan server saat menyimpan ulasan.' },
+      { error: 'Terjadi kesalahan server saat menyimpan laporan.' },
       { status: 500 }
     );
   }

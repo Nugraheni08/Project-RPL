@@ -1,63 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
 import styles from '@/styles/review-history.module.css';
 
-/* ============================================================
-   DYNAMIC REVIEW DATA ARRAY
-   ============================================================ */
-var USER_REVIEWS = [
-  {
-    id: 1,
-    facility: 'Waste Bin at SC Fmipa',
-    stars: 5,
-    time: '2 day ago',
-    text: 'Tempat sampahnya bersih dan terawat. Sangat membantu mengurangi sampah plastik di area kampus!',
-  },
-  {
-    id: 2,
-    facility: 'Refill Station Fapet',
-    stars: 4,
-    time: '5 day ago',
-    text: 'Airnya segar dan lancar. Cuma kadang antriannya agak panjang pas jam istirahat.',
-  },
-  {
-    id: 3,
-    facility: 'Refill Station at Common Classroom',
-    stars: 5,
-    time: '1 week ago',
-    text: 'Lokasi strategis, selalu saya pakai setelah kuliah. Mesinnya selalu bersih!',
-  },
-  {
-    id: 4,
-    facility: 'Waste Bin at Fahutan',
-    stars: 3,
-    time: '1 week ago',
-    text: 'Cukup membantu, tapi kadang bau karena jadwal pengangkutan kurang sering.',
-  },
-  {
-    id: 5,
-    facility: 'Refill Station at Rektorat',
-    stars: 5,
-    time: '2 week ago',
-    text: 'Air dingin dan segar banget. Cocok buat refill setelah olahraga di sekitar rektorat.',
-  },
-  {
-    id: 6,
-    facility: 'Waste Bin at Fapet',
-    stars: 4,
-    time: '3 week ago',
-    text: 'Penempatannya strategis di dekat kantin, jadi mudah dijangkau setelah makan.',
-  },
-];
+interface Review {
+  id: string;
+  facility: string;
+  stars: number;
+  time: string;
+  text: string;
+  created_at: string;
+}
 
-/* Dynamically compute total count */
-var TOTAL_REVIEWS = USER_REVIEWS.length;
-
-/* Render dynamic star component */
 function StarRating(props: { stars: number }) {
   var stars = props.stars;
   var items = [];
@@ -77,28 +34,103 @@ function StarRating(props: { stars: number }) {
 
 export default function ReviewHistoryPage() {
   var router = useRouter();
-  var [isLoading, setIsLoading] = useState(true);
+  var [loading, setLoading] = useState(true);
+  var [error, setError] = useState('');
+  var [totalReviews, setTotalReviews] = useState(0);
+  var [reviews, setReviews] = useState<Review[]>([]);
   var [visibleCount, setVisibleCount] = useState(4);
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  var channelRef = useRef<any>(null);
+  var userIdRef = useRef<string>('');
 
+  // ── Fetch reviews from API ────────────────────────────────────
+  var fetchReviews = async function () {
+    try {
+      var res = await fetch('/api/user/reviews');
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal memuat ulasan.');
+
+      setTotalReviews(json.totalReviews || 0);
+      setReviews(json.reviews || []);
+    } catch (err: unknown) {
+      var msg = err instanceof Error ? err.message : 'Gagal memuat.';
+      setError(msg);
+      console.error('REVIEW_HISTORY_FETCH_ERROR:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Initial load + real-time channel ──────────────────────────
   useEffect(function () {
-    var checkAuth = async function () {
-      var result = await supabase.auth.getSession();
-      if (!result.data.session) {
+    var init = async function () {
+      var sessionResult = await supabase.auth.getSession();
+      var currentSession = sessionResult.data.session;
+      if (!currentSession) {
         router.replace('/auth');
         return;
       }
-      setIsLoading(false);
+      userIdRef.current = currentSession.user.id;
+
+      await fetchReviews();
+
+      // Real-time listener
+      var channel = supabase
+        .channel('user-reviews-' + userIdRef.current)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userIdRef.current },
+          function () { fetchReviews(); }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userIdRef.current },
+          function () { fetchReviews(); }
+        )
+        .subscribe();
+
+      channelRef.current = channel;
     };
-    checkAuth();
+
+    init();
+
+    return function () {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
   }, [router]);
 
-  if (isLoading) {
-    return <div style={{ minHeight: '100vh', background: '#E8F5EF' }} />;
+  // ── Loading state ────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div id="main-app">
+        <div className={styles['review-page']} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '32px', animation: 'spin 1s linear infinite' }}>⏳</div>
+            <p style={{ marginTop: '12px', fontSize: '14px', color: '#8B9E96', fontWeight: 600 }}>Memuat ulasan...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  var visibleReviews = USER_REVIEWS.slice(0, visibleCount);
-  var hasMore = visibleCount < TOTAL_REVIEWS;
+  // ── Error state ──────────────────────────────────────────────
+  if (error) {
+    return (
+      <div id="main-app">
+        <div className={styles['review-page']} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+          <div style={{ textAlign: 'center' }}>
+            <p style={{ fontSize: '14px', color: '#E24B4A', fontWeight: 700 }}>⚠️ {error}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  var visibleReviews = reviews.slice(0, visibleCount);
+  var hasMore = visibleCount < totalReviews;
 
   return (
     <div id="main-app">
@@ -125,7 +157,7 @@ export default function ReviewHistoryPage() {
           <div className={styles['rv-summary-card']}>
             <div className={styles['rv-summary-icon-badge']}>🔍</div>
             <div className={styles['rv-summary-info']}>
-              <div className={styles['rv-summary-count']}>{TOTAL_REVIEWS}</div>
+              <div className={styles['rv-summary-count']}>{totalReviews}</div>
               <div className={styles['rv-summary-label']}>Total Reviews</div>
             </div>
           </div>
@@ -136,27 +168,33 @@ export default function ReviewHistoryPage() {
 
         {/* ==================== DYNAMIC REVIEW LIST ==================== */}
         <div className={styles['rv-list']}>
-          {visibleReviews.map(function (review) {
-            return (
-              <div key={review.id} className={styles['rv-card']}>
-                <div className={styles['rv-card-title']}>{review.facility}</div>
+          {visibleReviews.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: '#8B9E96', fontSize: '13px' }}>
+              Belum ada ulasan yang ditulis.
+            </div>
+          ) : (
+            visibleReviews.map(function (review) {
+              return (
+                <div key={review.id} className={styles['rv-card']}>
+                  <div className={styles['rv-card-title']}>{review.facility}</div>
 
-                <div className={styles['rv-card-rating-row']}>
-                  <StarRating stars={review.stars} />
-                  <span className={styles['rv-card-time']}>{review.time}</span>
+                  <div className={styles['rv-card-rating-row']}>
+                    <StarRating stars={review.stars} />
+                    <span className={styles['rv-card-time']}>{review.time}</span>
+                  </div>
+
+                  <div className={styles['rv-card-text']}>{review.text}</div>
                 </div>
-
-                <div className={styles['rv-card-text']}>{review.text}</div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
 
         {/* ==================== LOAD MORE ==================== */}
         {hasMore ? (
           <button
             className={styles['rv-load-more']}
-            onClick={function () { setVisibleCount(TOTAL_REVIEWS); }}
+            onClick={function () { setVisibleCount(totalReviews); }}
           >
             Load More History
           </button>
