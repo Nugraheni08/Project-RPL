@@ -61,9 +61,11 @@ export async function POST(request: Request) {
     console.log('REGISTER: Auth user created successfully', { userId, email, role });
 
     // ── Step 2: Update row di public.users ─────────────────────────
-    // Note: public.users diisi oleh trigger on_auth_user_created jika trigger ada.
-    // Jika trigger belum ada, kita lakukan UPSERT supaya lebih aman.
-    const { error: upsertError } = await serviceSupabase
+    // Kolom nim VARCHAR(11) dan nip VARCHAR(18) — potong jika terlalu panjang
+    var safeNim = role === 'Mahasiswa' ? String(identifier || '').slice(0, 11) : null;
+    var safeNip = role === 'Dosen' ? String(identifier || '').slice(0, 18) : null;
+
+    var { error: upsertError } = await serviceSupabase
       .from('users')
       .upsert(
         {
@@ -71,8 +73,8 @@ export async function POST(request: Request) {
           email,
           username,
           role,
-          nim: role === 'Mahasiswa' ? identifier : null,
-          nip: role === 'Dosen' ? identifier : null,
+          nim: safeNim || null,
+          nip: safeNip || null,
           is_verified: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
