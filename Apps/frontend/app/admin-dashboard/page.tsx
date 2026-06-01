@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/adminsidebar";
 import MapView from "@/components/map/MapView";
@@ -10,70 +11,81 @@ import {
   FiSettings,
   FiDroplet,
   FiTrash2,
-  FiAlertTriangle,
   FiAlertCircle,
-  FiMapPin,
-  FiUsers,
   FiBarChart2,
   FiCheckCircle,
   FiFlag,
   FiMessageSquare,
   FiEye,
   FiPlus,
+  FiLoader,
 } from "react-icons/fi";
 
-var STATS = [
-  { label: "Total Refill Saved", value: "2.4K", trend: "+18% this week", icon: <FiDroplet size={24} />, iconBg: "bg-blue-50", iconClr: "text-blue-600" },
-  { label: "Active Refill Stations", value: "47", trend: "+3 this month", icon: <FiDroplet size={24} />, iconBg: "bg-green-50", iconClr: "text-green-600" },
-  { label: "Active Waste Bins", value: "132", trend: "+7 this month", icon: <FiTrash2 size={24} />, iconBg: "bg-emerald-50", iconClr: "text-emerald-600" },
-  { label: "Reports Pending", value: "12", trend: "5 urgent unresolved", icon: <FiAlertCircle size={24} />, iconBg: "bg-red-50", iconClr: "text-red-500", trendRed: true },
-];
-
-var RECENT_REPORTS = [
-  { title: "Refill Station Rusak", location: "FMIPA", time: "2 jam lalu", status: "URGENT", statusClass: "bg-red-100 text-red-700" },
-  { title: "Tempat Sampah Penuh", location: "Fapet", time: "5 jam lalu", status: "PENDING", statusClass: "bg-amber-100 text-amber-700" },
-  { title: "Sensor Air Bocor", location: "Common Class", time: "12 jam lalu", status: "IN PROGRESS", statusClass: "bg-blue-100 text-blue-700" },
-];
-
-var BAR_DATA = [
-  { day: "Mon", value: 65 },
-  { day: "Tue", value: 82 },
-  { day: "Wed", value: 45 },
-  { day: "Thu", value: 90 },
-  { day: "Fri", value: 72 },
-  { day: "Sat", value: 38 },
-  { day: "Sun", value: 25 },
-];
-
-var LOCATIONS = [
-  { name: "Central Library", pct: 92 },
-  { name: "Engineering Block A", pct: 78 },
-  { name: "Student Center", pct: 65 },
-  { name: "FMIPA Building", pct: 88 },
-  { name: "Rectorate", pct: 54 },
-];
-
-var FACILITY_TABLE = [
-  { id: "FAC-001", name: "Refill Station A1", category: "Refill", status: "ACTIVE", statusClass: "bg-green-100 text-green-700" },
-  { id: "FAC-002", name: "Waste Bin B3", category: "Waste Bin", status: "MAINTENANCE", statusClass: "bg-amber-100 text-amber-700" },
-  { id: "FAC-003", name: "Refill Station C7", category: "Refill", status: "OFFLINE", statusClass: "bg-red-100 text-red-700" },
-  { id: "FAC-004", name: "Refill Station D2", category: "Refill", status: "ACTIVE", statusClass: "bg-green-100 text-green-700" },
-  { id: "FAC-005", name: "Waste Bin A1", category: "Waste Bin", status: "ACTIVE", statusClass: "bg-green-100 text-green-700" },
-];
-
-var LEADERBOARD = [
-  { name: "Ziggy Zagga", pts: 2450, initials: "ZZ", tag: "MVP", tagClass: "bg-red-100 text-red-600" },
-  { name: "Khautal", pts: 2150, initials: "KH" },
-  { name: "Krespo", pts: 2000, initials: "KR" },
-  { name: "Alifia", pts: 1840, initials: "AL" },
-];
-
-var REVIEWS = [
-  { user: "Alya", text: "Refill station sangat membantu. Airnya segar!", stars: 5 },
-  { user: "Dimas", text: "Tempat sampah perlu ditambah jadwal pengangkutan.", stars: 3 },
-];
+interface DashboardData {
+  campusName: string;
+  ecoScore: number;
+  stats: { label: string; value: string; trend: string; trendRed?: boolean }[];
+  recentReports: { id: string; title: string; location: string; time: string; status: string; statusClass: string }[];
+  weeklyRefill: { day: string; value: number }[];
+  activeLocations: { name: string; pct: number }[];
+  userGrowth: { active: string; new: number; target: string };
+  facilityTable: { id: string; dbId: string; name: string; category: string; status: string; statusClass: string }[];
+  leaderboard: { name: string; pts: number; initials: string; isMvp: boolean }[];
+  reviews: { user: string; text: string; stars: number }[];
+}
 
 export default function AdminDashboard() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/dashboard");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal memuat dashboard.");
+      setData(json);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setError(msg);
+      console.error("DASHBOARD_FETCH_ERROR:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchDashboard(); }, []);
+
+  if (loading) {
+    return (
+      <main className="flex h-screen w-full bg-slate-100 overflow-hidden">
+        <AdminSidebar />
+        <section className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <FiLoader className="animate-spin text-green-600 mx-auto" size={40} />
+            <p className="mt-4 text-slate-600 font-semibold text-lg">Memuat Dashboard...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <main className="flex h-screen w-full bg-slate-100 overflow-hidden">
+        <AdminSidebar />
+        <section className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600 text-xl font-bold">⚠️ {error || "Data tidak tersedia."}</p>
+            <button onClick={fetchDashboard} className="mt-4 bg-green-600 text-white px-6 py-2 rounded-xl font-bold">Coba Lagi</button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="flex h-screen w-full bg-slate-100 overflow-hidden">
       <AdminSidebar />
@@ -113,21 +125,24 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold text-slate-900">Dashboard Overview</h1>
-              <p className="text-slate-700 mt-1 text-lg">Green Campus Monitoring — Universitas Indonesia</p>
+              <p className="text-slate-700 mt-1 text-lg">Green Campus Monitoring — {data.campusName}</p>
             </div>
             <div className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold">
-              Campus Eco Score: 84/100
+              Campus Eco Score: {data.ecoScore}/100
             </div>
           </div>
 
           {/* ROW 1: STAT CARDS */}
           <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6 mb-8">
-            {STATS.map(function (s) {
+            {data.stats.map(function (s, idx) {
+              var icons = [<FiDroplet size={24} key={0} />, <FiDroplet size={24} key={1} />, <FiTrash2 size={24} key={2} />, <FiAlertCircle size={24} key={3} />];
+              var iconBgs = ["bg-blue-50", "bg-green-50", "bg-emerald-50", "bg-red-50"];
+              var iconClrs = ["text-blue-600", "text-green-600", "text-emerald-600", "text-red-500"];
               return (
                 <div key={s.label} className="bg-white rounded-3xl p-6 shadow-md">
                   <div className="flex justify-between items-start mb-4">
-                    <div className={"w-12 h-12 rounded-xl flex items-center justify-center text-2xl " + s.iconBg}>
-                      <span>{s.icon}</span>
+                    <div className={"w-12 h-12 rounded-xl flex items-center justify-center text-2xl " + iconBgs[idx]}>
+                      <span className={iconClrs[idx]}>{icons[idx]}</span>
                     </div>
                     <span className={"text-xs font-semibold " + (s.trendRed ? "text-red-500" : "text-green-600")}>{s.trend}</span>
                   </div>
@@ -153,7 +168,7 @@ export default function AdminDashboard() {
                     <option>Refill Station</option>
                     <option>Waste Bin</option>
                   </select>
-                  <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold">Refresh</button>
+                  <button onClick={fetchDashboard} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold">Refresh</button>
                 </div>
               </div>
               <MapView 
@@ -166,24 +181,28 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-md flex flex-col">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-2xl font-bold text-slate-900">Recent Reports</h2>
-                <button className="text-green-700 font-bold">View All</button>
+                <Link href="/admin-reports" className="text-green-700 font-bold">View All</Link>
               </div>
               <div className="space-y-4 flex-1">
-                {RECENT_REPORTS.map(function (r) {
-                  return (
-                    <div key={r.title} className="border rounded-xl p-4 hover:border-green-300 transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-slate-900 text-sm">{r.title}</h3>
-                        <span className={"text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap " + r.statusClass}>{r.status}</span>
+                {data.recentReports.length === 0 ? (
+                  <p className="text-slate-400 text-sm text-center py-8">No reports yet.</p>
+                ) : (
+                  data.recentReports.map(function (r) {
+                    return (
+                      <div key={r.id} className="border rounded-xl p-4 hover:border-green-300 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-bold text-slate-900 text-sm">{r.title}</h3>
+                          <span className={"text-[10px] font-bold px-2.5 py-1 rounded-lg whitespace-nowrap " + r.statusClass}>{r.status}</span>
+                        </div>
+                        <p className="text-slate-600 text-xs mt-1 mb-3">{r.location} • {r.time}</p>
+                        <div className="flex gap-2">
+                          <button className="text-[10px] font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-lg hover:bg-green-100 flex items-center gap-1"><FiEye size={10} /> View</button>
+                          <button className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 flex items-center gap-1"><FiCheckCircle size={10} /> Resolve</button>
+                        </div>
                       </div>
-                      <p className="text-slate-600 text-xs mt-1 mb-3">{r.location} • {r.time}</p>
-                      <div className="flex gap-2">
-                        <button className="text-[10px] font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-lg hover:bg-green-100 flex items-center gap-1"><FiEye size={10} /> View</button>
-                        <button className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 flex items-center gap-1"><FiCheckCircle size={10} /> Resolve</button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -195,10 +214,12 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-bold text-slate-900 mb-4">Weekly Refill Activity</h2>
               <p className="text-xs text-slate-500 mb-4">Daily usage of water stations</p>
               <div className="flex items-end justify-between gap-2 h-40">
-                {BAR_DATA.map(function (b) {
+                {data.weeklyRefill.map(function (b) {
+                  var maxVal = Math.max(...data.weeklyRefill.map(function (x) { return x.value; }), 1);
+                  var h = Math.max(4, (b.value / maxVal) * 120);
                   return (
                     <div key={b.day} className="flex flex-col items-center gap-1 flex-1">
-                      <div className="w-full bg-green-500 rounded-t-md transition-all hover:bg-green-600" style={{ height: (b.value * 1.2) + "px", minHeight: "4px" }}></div>
+                      <div className="w-full bg-green-500 rounded-t-md transition-all hover:bg-green-600" style={{ height: h + "px", minHeight: "4px" }}></div>
                       <span className="text-[10px] font-semibold text-slate-400">{b.day}</span>
                     </div>
                   );
@@ -211,7 +232,7 @@ export default function AdminDashboard() {
               <h2 className="text-lg font-bold text-slate-900 mb-4">Active Locations</h2>
               <p className="text-xs text-slate-500 mb-4">High-traffic hotspots</p>
               <div className="flex flex-col gap-3">
-                {LOCATIONS.map(function (loc) {
+                {data.activeLocations.map(function (loc) {
                   return (
                     <div key={loc.name}>
                       <div className="flex justify-between items-center mb-1">
@@ -237,9 +258,9 @@ export default function AdminDashboard() {
                 </svg>
               </div>
               <div className="flex justify-between mt-3 pt-3 border-t border-slate-200">
-                <div className="text-center"><div className="text-lg font-extrabold text-slate-900">1.8K</div><div className="text-[10px] text-slate-500 font-semibold">Active</div></div>
-                <div className="text-center"><div className="text-lg font-extrabold text-green-600">+142</div><div className="text-[10px] text-slate-500 font-semibold">New</div></div>
-                <div className="text-center"><div className="text-lg font-extrabold text-slate-900">2.5K</div><div className="text-[10px] text-slate-500 font-semibold">Target</div></div>
+                <div className="text-center"><div className="text-lg font-extrabold text-slate-900">{data.userGrowth.active}</div><div className="text-[10px] text-slate-500 font-semibold">Active</div></div>
+                <div className="text-center"><div className="text-lg font-extrabold text-green-600">+{data.userGrowth.new}</div><div className="text-[10px] text-slate-500 font-semibold">New</div></div>
+                <div className="text-center"><div className="text-lg font-extrabold text-slate-900">{data.userGrowth.target}</div><div className="text-[10px] text-slate-500 font-semibold">Target</div></div>
               </div>
             </div>
           </div>
@@ -250,7 +271,7 @@ export default function AdminDashboard() {
             <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-md">
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-3xl font-bold text-slate-900">Facility Management</h2>
-                <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold flex items-center gap-1.5"><FiPlus size={16} /> Add Facility</button>
+                <Link href="/admin-facility" className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-semibold flex items-center gap-1.5"><FiPlus size={16} /> Add Facility</Link>
               </div>
               <table className="w-full">
                 <thead>
@@ -262,24 +283,28 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {FACILITY_TABLE.map(function (f) {
-                    return (
-                      <tr key={f.id} className="border-b">
-                        <td className="py-4">
-                          <div className="font-medium text-slate-900">{f.name}</div>
-                          <div className="text-[10px] text-slate-400">{f.id}</div>
-                        </td>
-                        <td className="text-slate-700 text-sm">{f.category}</td>
-                        <td><span className={"text-xs font-bold px-3 py-1 rounded-lg " + f.statusClass}>{f.status}</span></td>
-                        <td>
-                          <div className="flex gap-2">
-                            <button className="text-xs font-semibold text-slate-500 hover:text-green-600">Edit</button>
-                            <button className="text-xs font-semibold text-slate-500 hover:text-red-500">Delete</button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {data.facilityTable.length === 0 ? (
+                    <tr><td colSpan={4} className="py-8 text-center text-slate-400 text-sm">No facilities yet.</td></tr>
+                  ) : (
+                    data.facilityTable.map(function (f) {
+                      return (
+                        <tr key={f.id} className="border-b">
+                          <td className="py-4">
+                            <div className="font-medium text-slate-900">{f.name}</div>
+                            <div className="text-[10px] text-slate-400">{f.id}</div>
+                          </td>
+                          <td className="text-slate-700 text-sm">{f.category}</td>
+                          <td><span className={"text-xs font-bold px-3 py-1 rounded-lg " + f.statusClass}>{f.status}</span></td>
+                          <td>
+                            <div className="flex gap-2">
+                              <Link href={"/admin-facility"} className="text-xs font-semibold text-slate-500 hover:text-green-600">Edit</Link>
+                              <button className="text-xs font-semibold text-slate-500 hover:text-red-500">Delete</button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
@@ -290,21 +315,25 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-3xl p-6 shadow-md">
                 <h2 className="text-2xl font-bold text-slate-900 mb-4">Eco Leaderboard</h2>
                 <div className="space-y-3">
-                  {LEADERBOARD.map(function (lb, idx) {
-                    return (
-                      <div key={lb.name} className="flex items-center gap-3">
-                        <div className="text-sm font-extrabold text-slate-300 w-5">{idx + 1}</div>
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-700 flex items-center justify-center text-white font-bold text-[11px]">{lb.initials}</div>
-                        <div className="flex-1">
-                          <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
-                            {lb.name}
-                            {lb.tag ? <span className={"text-[8px] font-bold px-1.5 py-0.5 rounded-full " + lb.tagClass}>{lb.tag}</span> : null}
+                  {data.leaderboard.length === 0 ? (
+                    <p className="text-slate-400 text-sm text-center py-4">No users yet.</p>
+                  ) : (
+                    data.leaderboard.map(function (lb, idx) {
+                      return (
+                        <div key={lb.name} className="flex items-center gap-3">
+                          <div className="text-sm font-extrabold text-slate-300 w-5">{idx + 1}</div>
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-700 flex items-center justify-center text-white font-bold text-[11px]">{lb.initials}</div>
+                          <div className="flex-1">
+                            <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                              {lb.name}
+                              {lb.isMvp ? <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">MVP</span> : null}
+                            </div>
                           </div>
+                          <div className="text-xs font-bold text-green-600">{lb.pts.toLocaleString("en-US")} pts</div>
                         </div>
-                        <div className="text-xs font-bold text-green-600">{lb.pts.toLocaleString("en-US")} pts</div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -312,12 +341,12 @@ export default function AdminDashboard() {
               <div className="bg-white rounded-3xl p-6 shadow-md">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-2xl font-bold text-slate-900">Review Moderation</h2>
-                  <button className="text-sm font-bold text-green-600 hover:underline">Manage</button>
+                  <Link href="/admin-reviews" className="text-sm font-bold text-green-600 hover:underline">Manage</Link>
                 </div>
                 <div className="space-y-3">
-                  {REVIEWS.map(function (rev) {
+                  {data.reviews.map(function (rev) {
                     return (
-                      <div key={rev.user} className="border rounded-xl p-3">
+                      <div key={rev.user + rev.text} className="border rounded-xl p-3">
                         <div className="flex items-center gap-2 mb-1">
                           <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">{rev.user.charAt(0)}</div>
                           <span className="text-xs font-semibold text-slate-700">{rev.user}</span>

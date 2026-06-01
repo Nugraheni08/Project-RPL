@@ -42,28 +42,12 @@ export default function AdminMapPage() {
     setIsLoading(true);
     setError(null);
     try {
-      var { data, error: fetchError } = await supabase
-        .from("facilities")
-        .select("*")
-        .order("name", { ascending: true })
-        .limit(200);
+      var res = await fetch("/api/admin/facilities");
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal mengambil data fasilitas.");
 
-      if (fetchError) throw fetchError;
-
-      if (data) {
-        setFacilities(
-          data.map(function (row: Record<string, unknown>) {
-            return {
-              id: (row.id as string) || "",
-              name: (row.name as string) || "",
-              category: (row.category as string) || "Unknown",
-              latitude: Number(row.latitude) || 0,
-              longitude: Number(row.longitude) || 0,
-              status: (row.status as string) || "Active",
-              address: (row.address as string) || "",
-            };
-          })
-        );
+      if (json.facilities) {
+        setFacilities(json.facilities);
       }
     } catch (err: unknown) {
       var message = err instanceof Error ? err.message : "Unknown error";

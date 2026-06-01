@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { supabase } from "@/lib/supabase";
+import { FiLoader } from "react-icons/fi";
 import {
   FiSearch,
   FiEye,
@@ -37,29 +38,12 @@ export default function AdminReportsPage() {
     setIsLoading(true);
     setError(null);
     try {
-      var { data, error: fetchError } = await supabase
-        .from("reports")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      var res = await fetch("/api/admin/reports");
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal mengambil data laporan.");
 
-      if (fetchError) throw fetchError;
-
-      if (data) {
-        setReports(
-          data.map(function (row: Record<string, unknown>) {
-            return {
-              id: (row.id as string) || "",
-              user_id: (row.user_id as string) || "",
-              user_name: (row.user_name as string) || "User",
-              facility_type: (row.facility_type as string) || "Unknown",
-              location_ref: (row.location_ref as string) || "-",
-              description: (row.description as string) || "",
-              status: (row.status as string) || "PENDING",
-              created_at: (row.created_at as string) || "",
-            };
-          })
-        );
+      if (json.reports) {
+        setReports(json.reports);
       }
     } catch (err: unknown) {
       var message = err instanceof Error ? err.message : "Unknown error";
@@ -239,8 +223,9 @@ export default function AdminReportsPage() {
       {/* TABLE */}
       <div className="bg-white rounded-3xl shadow overflow-hidden">
         {isLoading ? (
-          <div className="p-20 text-center text-slate-500 font-semibold">
-            <div className="animate-pulse">Loading reports...</div>
+          <div className="p-20 text-center text-slate-500 font-semibold flex items-center justify-center gap-3">
+            <FiLoader className="animate-spin text-green-600" size={28} />
+            <span>Loading reports...</span>
           </div>
         ) : (
           <table className="w-full">
