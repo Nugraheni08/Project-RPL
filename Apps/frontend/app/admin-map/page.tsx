@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import AdminSidebar from "@/components/adminsidebar";
+import { useState, useEffect } from "react";
+import AdminLayout from "@/components/layout/AdminLayout";
+import { supabase } from "@/lib/supabase";
 import {
   FiMapPin,
   FiPlus,
@@ -10,472 +11,419 @@ import {
   FiSearch,
 } from "react-icons/fi";
 
-interface Location {
-  id: number;
+interface Facility {
+  id: string;
   name: string;
   category: string;
-  latitude: string;
-  longitude: string;
+  latitude: number;
+  longitude: number;
   status: string;
+  address?: string;
 }
 
 export default function AdminMapPage() {
-  const [search, setSearch] = useState("");
+  var [facilities, setFacilities] = useState<Facility[]>([]);
+  var [isLoading, setIsLoading] = useState(true);
+  var [error, setError] = useState<string | null>(null);
+  var [search, setSearch] = useState("");
 
-  const [locations, setLocations] = useState<Location[]>([
-    {
-      id: 1,
-      name: "Refill Station FMIPA",
-      category: "Water Refill",
-      latitude: "-5.3612",
-      longitude: "105.2423",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Waste Bin Engineering",
-      category: "Waste Bin",
-      latitude: "-5.3601",
-      longitude: "105.2411",
-      status: "Active",
-    },
-  ]);
+  var [showModal, setShowModal] = useState(false);
+  var [editMode, setEditMode] = useState(false);
+  var [selectedId, setSelectedId] = useState<string | null>(null);
+  var [saving, setSaving] = useState(false);
 
-  const [showModal, setShowModal] = useState(false);
-  const [editMode, setEditMode] = useState(false);
+  var [name, setName] = useState("");
+  var [category, setCategory] = useState("Water Refill");
+  var [latitude, setLatitude] = useState("");
+  var [longitude, setLongitude] = useState("");
+  var [status, setStatusForm] = useState("Active");
 
-  const [selectedId, setSelectedId] =
-    useState<number | null>(null);
+  var fetchFacilities = async function () {
+    setIsLoading(true);
+    setError(null);
+    try {
+      var { data, error: fetchError } = await supabase
+        .from("facilities")
+        .select("*")
+        .order("name", { ascending: true })
+        .limit(200);
 
-  const [name, setName] = useState("");
-  const [category, setCategory] =
-    useState("Water Refill");
+      if (fetchError) throw fetchError;
 
-  const [latitude, setLatitude] =
-    useState("");
+      if (data) {
+        setFacilities(
+          data.map(function (row: Record<string, unknown>) {
+            return {
+              id: (row.id as string) || "",
+              name: (row.name as string) || "",
+              category: (row.category as string) || "Unknown",
+              latitude: Number(row.latitude) || 0,
+              longitude: Number(row.longitude) || 0,
+              status: (row.status as string) || "Active",
+              address: (row.address as string) || "",
+            };
+          })
+        );
+      }
+    } catch (err: unknown) {
+      var message = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal mengambil data fasilitas: " + message);
+      console.error("Fetch facilities error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const [longitude, setLongitude] =
-    useState("");
+  useEffect(function () {
+    fetchFacilities();
+  }, []);
 
-  const [status, setStatus] =
-    useState("Active");
-
-  const resetForm = () => {
+  var resetForm = function () {
     setName("");
     setCategory("Water Refill");
     setLatitude("");
     setLongitude("");
-    setStatus("Active");
-
+    setStatusForm("Active");
     setEditMode(false);
     setSelectedId(null);
   };
 
-  const addLocation = () => {
-    if (!name) return;
+  var handleSave = async function () {
+    if (!name.trim()) return;
 
-    const newLocation: Location = {
-      id: Date.now(),
-      name,
-      category,
-      latitude,
-      longitude,
-      status,
-    };
+    setSaving(true);
+    try {
+      var payload: Record<string, unknown> = {
+        name: name.trim(),
+        category: category,
+        latitude: parseFloat(latitude) || 0,
+        longitude: parseFloat(longitude) || 0,
+        status: status,
+      };
 
-    setLocations([
-      ...locations,
-      newLocation,
-    ]);
+      if (editMode && selectedId) {
+        var { error: updateError } = await supabase
+          .from("facilities")
+          .update(payload)
+          .eq("id", selectedId);
 
-    resetForm();
-    setShowModal(false);
+        if (updateError) throw updateError;
+      } else {
+        var { error: insertError } = await supabase
+          .from("facilities")
+          .insert(payload);
+
+        if (insertError) throw insertError;
+      }
+
+      await fetchFacilities();
+      resetForm();
+      setShowModal(false);
+    } catch (err: unknown) {
+      var message = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal menyimpan fasilitas: " + message);
+      console.error("Save facility error:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const deleteLocation = (id: number) => {
-    setLocations(
-      locations.filter(
-        (location) => location.id !== id
-      )
-    );
+  var deleteFacility = async function (id: string) {
+    if (!confirm("Are you sure you want to delete this facility?")) return;
+
+    try {
+      var { error: deleteError } = await supabase
+        .from("facilities")
+        .delete()
+        .eq("id", id);
+
+      if (deleteError) throw deleteError;
+
+      await fetchFacilities();
+    } catch (err: unknown) {
+      var message = err instanceof Error ? err.message : "Unknown error";
+      setError("Gagal menghapus fasilitas: " + message);
+      console.error("Delete facility error:", err);
+    }
   };
 
-  const handleEdit = (
-    location: Location
-  ) => {
-    setSelectedId(location.id);
-
-    setName(location.name);
-    setCategory(location.category);
-    setLatitude(location.latitude);
-    setLongitude(location.longitude);
-    setStatus(location.status);
-
+  var handleEdit = function (facility: Facility) {
+    setSelectedId(facility.id);
+    setName(facility.name);
+    setCategory(facility.category);
+    setLatitude(String(facility.latitude || ""));
+    setLongitude(String(facility.longitude || ""));
+    setStatusForm(facility.status);
     setEditMode(true);
     setShowModal(true);
   };
 
-  const saveEdit = () => {
-    setLocations(
-      locations.map((location) =>
-        location.id === selectedId
-          ? {
-              ...location,
-              name,
-              category,
-              latitude,
-              longitude,
-              status,
-            }
-          : location
-      )
+  var filteredFacilities = facilities.filter(function (f) {
+    return (
+      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.category.toLowerCase().includes(search.toLowerCase())
     );
+  });
 
-    resetForm();
-    setShowModal(false);
-  };
-
-  const filteredLocations =
-    locations.filter((location) =>
-      location.name
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
+  // Dynamic summary counts
+  var totalLocations = facilities.length;
+  var refillStations = facilities.filter(function (f) {
+    return f.category && f.category.toLowerCase().includes("refill");
+  }).length;
+  var wasteBins = facilities.filter(function (f) {
+    return f.category && f.category.toLowerCase().includes("waste");
+  }).length;
+  var activeCount = facilities.filter(function (f) {
+    return f.status && f.status.toLowerCase() === "active";
+  }).length;
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-extrabold text-slate-950">
+            Campus Map Management
+          </h1>
+          <p className="text-slate-800 mt-2 text-lg">
+            Manage campus facility locations
+          </p>
+        </div>
 
-      <section className="ml-64 p-8">
+        <button
+          onClick={function () {
+            resetForm();
+            setShowModal(true);
+          }}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold shadow"
+        >
+          <FiPlus />
+          Add Location
+        </button>
+      </div>
 
-        {/* HEADER */}
-        <div className="flex justify-between items-center mb-8">
-
-          <div>
-            <h1 className="text-4xl font-extrabold text-slate-950">
-              Campus Map Management
-            </h1>
-
-            <p className="text-slate-800 mt-2 text-lg">
-              Manage campus facility locations
-            </p>
-          </div>
-
+      {/* ERROR BANNER */}
+      {error ? (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-2xl mb-6 flex items-center justify-between">
+          <span className="font-semibold">{error}</span>
           <button
-            onClick={() => {
-              resetForm();
-              setShowModal(true);
-            }}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 font-bold"
+            onClick={function () { setError(null); }}
+            className="text-red-500 hover:text-red-700 font-bold ml-4"
           >
-            <FiPlus />
-            Add Location
+            ✕
           </button>
+        </div>
+      ) : null}
 
+      {/* STATS */}
+      <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-3xl p-6 shadow">
+          <h3 className="text-slate-800 font-semibold">Total Locations</h3>
+          <h2 className="text-5xl font-bold text-slate-950 mt-2">
+            {isLoading ? "..." : totalLocations}
+          </h2>
         </div>
 
-        {/* STATS */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
-
-          <div className="bg-white rounded-3xl p-6 shadow">
-            <h3 className="text-slate-800 font-semibold">
-              Total Locations
-            </h3>
-
-            <h2 className="text-5xl font-bold text-slate-950 mt-2">
-              {locations.length}
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 shadow">
-            <h3 className="text-slate-800 font-semibold">
-              Refill Stations
-            </h3>
-
-            <h2 className="text-5xl font-bold text-green-600 mt-2">
-              {
-                locations.filter(
-                  (l) =>
-                    l.category ===
-                    "Water Refill"
-                ).length
-              }
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 shadow">
-            <h3 className="text-slate-800 font-semibold">
-              Waste Bins
-            </h3>
-
-            <h2 className="text-5xl font-bold text-blue-600 mt-2">
-              {
-                locations.filter(
-                  (l) =>
-                    l.category ===
-                    "Waste Bin"
-                ).length
-              }
-            </h2>
-          </div>
-
-          <div className="bg-white rounded-3xl p-6 shadow">
-            <h3 className="text-slate-800 font-semibold">
-              Active
-            </h3>
-
-            <h2 className="text-5xl font-bold text-purple-600 mt-2">
-              {
-                locations.filter(
-                  (l) =>
-                    l.status === "Active"
-                ).length
-              }
-            </h2>
-          </div>
-
+        <div className="bg-white rounded-3xl p-6 shadow">
+          <h3 className="text-slate-800 font-semibold">Refill Stations</h3>
+          <h2 className="text-5xl font-bold text-green-600 mt-2">
+            {isLoading ? "..." : refillStations}
+          </h2>
         </div>
 
-        {/* SEARCH */}
-        <div className="bg-white rounded-3xl shadow p-6 mb-6">
-
-          <div className="relative">
-
-            <FiSearch
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"
-            />
-
-            <input
-              type="text"
-              value={search}
-              onChange={(e) =>
-                setSearch(e.target.value)
-              }
-              placeholder="Search location..."
-              className="w-full pl-12 py-4 border border-slate-300 rounded-xl text-slate-950 font-semibold"
-            />
-
-          </div>
-
+        <div className="bg-white rounded-3xl p-6 shadow">
+          <h3 className="text-slate-800 font-semibold">Waste Bins</h3>
+          <h2 className="text-5xl font-bold text-blue-600 mt-2">
+            {isLoading ? "..." : wasteBins}
+          </h2>
         </div>
 
-        {/* TABLE */}
-        <div className="bg-white rounded-3xl shadow overflow-hidden">
+        <div className="bg-white rounded-3xl p-6 shadow">
+          <h3 className="text-slate-800 font-semibold">Active</h3>
+          <h2 className="text-5xl font-bold text-purple-600 mt-2">
+            {isLoading ? "..." : activeCount}
+          </h2>
+        </div>
+      </div>
 
+      {/* SEARCH */}
+      <div className="bg-white rounded-3xl shadow p-6 mb-6">
+        <div className="relative">
+          <FiSearch
+            size={20}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600"
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={function (e) { setSearch(e.target.value); }}
+            placeholder="Search location..."
+            className="w-full pl-12 py-4 border border-slate-300 rounded-xl text-slate-950 font-semibold"
+          />
+        </div>
+      </div>
+
+      {/* TABLE */}
+      <div className="bg-white rounded-3xl shadow overflow-hidden">
+        {isLoading ? (
+          <div className="p-20 text-center text-slate-500 font-semibold">
+            <div className="animate-pulse">Loading facilities...</div>
+          </div>
+        ) : (
           <table className="w-full">
-
             <thead className="bg-slate-200">
               <tr>
-                <th className="p-5 text-left">
-                  Facility
-                </th>
-                <th className="p-5 text-left">
-                  Category
-                </th>
-                <th className="p-5 text-left">
-                  Latitude
-                </th>
-                <th className="p-5 text-left">
-                  Longitude
-                </th>
-                <th className="p-5 text-left">
-                  Status
-                </th>
-                <th className="p-5 text-center">
-                  Action
-                </th>
+                <th className="p-5 text-left text-slate-950 font-bold">Facility</th>
+                <th className="p-5 text-left text-slate-950 font-bold">Category</th>
+                <th className="p-5 text-left text-slate-950 font-bold">Latitude</th>
+                <th className="p-5 text-left text-slate-950 font-bold">Longitude</th>
+                <th className="p-5 text-left text-slate-950 font-bold">Status</th>
+                <th className="p-5 text-center text-slate-950 font-bold">Action</th>
               </tr>
             </thead>
-
             <tbody>
-
-              {filteredLocations.map(
-                (location) => (
-                  <tr
-                    key={location.id}
-                    className="border-t hover:bg-slate-50"
-                  >
-                    <td className="p-5 font-bold text-slate-950">
-                      {location.name}
-                    </td>
-
-                    <td className="p-5 text-slate-900">
-                      {location.category}
-                    </td>
-
-                    <td className="p-5 text-slate-900">
-                      {location.latitude}
-                    </td>
-
-                    <td className="p-5 text-slate-900">
-                      {location.longitude}
-                    </td>
-
-                    <td className="p-5">
-                      <span className="bg-green-100 text-green-700 px-3 py-1 rounded-lg font-bold">
-                        {location.status}
-                      </span>
-                    </td>
-
-                    <td className="p-5">
-                      <div className="flex justify-center gap-3">
-
-                        <button
-                          onClick={() =>
-                            handleEdit(
-                              location
-                            )
+              {filteredFacilities.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-slate-500 font-semibold">
+                    No facilities found.
+                  </td>
+                </tr>
+              ) : (
+                filteredFacilities.map(function (facility) {
+                  return (
+                    <tr key={facility.id} className="border-t hover:bg-slate-50">
+                      <td className="p-5 font-bold text-slate-950">
+                        {facility.name}
+                      </td>
+                      <td className="p-5 text-slate-900">
+                        {facility.category}
+                      </td>
+                      <td className="p-5 text-slate-900">
+                        {facility.latitude}
+                      </td>
+                      <td className="p-5 text-slate-900">
+                        {facility.longitude}
+                      </td>
+                      <td className="p-5">
+                        <span
+                          className={
+                            "px-3 py-1 rounded-lg font-bold text-sm " +
+                            (facility.status === "Active"
+                              ? "bg-green-100 text-green-700"
+                              : facility.status === "Maintenance"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700")
                           }
-                          className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl"
                         >
-                          <FiEdit2 />
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            deleteLocation(
-                              location.id
-                            )
-                          }
-                          className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-xl"
-                        >
-                          <FiTrash2 />
-                        </button>
-
-                      </div>
-                    </td>
-                  </tr>
-                )
+                          {facility.status}
+                        </span>
+                      </td>
+                      <td className="p-5">
+                        <div className="flex justify-center gap-3">
+                          <button
+                            onClick={function () { handleEdit(facility); }}
+                            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl"
+                          >
+                            <FiEdit2 />
+                          </button>
+                          <button
+                            onClick={function () { deleteFacility(facility.id); }}
+                            className="bg-red-600 hover:bg-red-700 text-white p-3 rounded-xl"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
-
             </tbody>
-
           </table>
+        )}
+      </div>
 
-        </div>
+      {/* MODAL */}
+      {showModal ? (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white w-[500px] rounded-3xl p-8 shadow-2xl">
+            <h2 className="text-3xl font-bold text-slate-950 mb-6">
+              {editMode ? "Edit Location" : "Add Location"}
+            </h2>
 
-        {/* MODAL */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="space-y-4">
+              <input
+                value={name}
+                onChange={function (e) { setName(e.target.value); }}
+                placeholder="Facility Name"
+                className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
+              />
 
-            <div className="bg-white w-[500px] rounded-3xl p-8 shadow-2xl">
+              <select
+                value={category}
+                onChange={function (e) { setCategory(e.target.value); }}
+                className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
+              >
+                <option>Water Refill</option>
+                <option>Waste Bin</option>
+              </select>
 
-              <h2 className="text-3xl font-bold text-slate-950 mb-6">
-                {editMode
-                  ? "Edit Location"
-                  : "Add Location"}
-              </h2>
+              <input
+                value={latitude}
+                onChange={function (e) { setLatitude(e.target.value); }}
+                placeholder="Latitude (e.g. -5.3612)"
+                className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
+              />
 
-              <div className="space-y-4">
+              <input
+                value={longitude}
+                onChange={function (e) { setLongitude(e.target.value); }}
+                placeholder="Longitude (e.g. 105.2423)"
+                className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
+              />
 
-                <input
-                  value={name}
-                  onChange={(e) =>
-                    setName(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Facility Name"
-                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
-                />
-
-                <select
-                  value={category}
-                  onChange={(e) =>
-                    setCategory(
-                      e.target.value
-                    )
-                  }
-                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
-                >
-                  <option>
-                    Water Refill
-                  </option>
-
-                  <option>
-                    Waste Bin
-                  </option>
-                </select>
-
-                <input
-                  value={latitude}
-                  onChange={(e) =>
-                    setLatitude(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Latitude"
-                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
-                />
-
-                <input
-                  value={longitude}
-                  onChange={(e) =>
-                    setLongitude(
-                      e.target.value
-                    )
-                  }
-                  placeholder="Longitude"
-                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
-                />
-
-                <select
-                  value={status}
-                  onChange={(e) =>
-                    setStatus(
-                      e.target.value
-                    )
-                  }
-                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
-                >
-                  <option>
-                    Active
-                  </option>
-
-                  <option>
-                    Maintenance
-                  </option>
-
-                  <option>
-                    Offline
-                  </option>
-                </select>
-
-              </div>
-
-              <div className="flex gap-3 mt-6">
-
-                <button
-                  onClick={
-                    editMode
-                      ? saveEdit
-                      : addLocation
-                  }
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold"
-                >
-                  {editMode
-                    ? "Update Location"
-                    : "Save Location"}
-                </button>
-
-                <button
-                  onClick={() => {
-                    resetForm();
-                    setShowModal(false);
-                  }}
-                  className="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-950 py-3 rounded-xl font-bold"
-                >
-                  Cancel
-                </button>
-
-              </div>
-
+              <select
+                value={status}
+                onChange={function (e) { setStatusForm(e.target.value); }}
+                className="w-full border border-slate-300 p-4 rounded-xl text-slate-950"
+              >
+                <option>Active</option>
+                <option>Maintenance</option>
+                <option>Offline</option>
+              </select>
             </div>
 
-          </div>
-        )}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleSave}
+                disabled={saving || !name.trim()}
+                className={
+                  "flex-1 text-white py-3 rounded-xl font-bold " +
+                  (saving || !name.trim()
+                    ? "bg-slate-400 cursor-not-allowed"
+                    : "bg-green-600 hover:bg-green-700")
+                }
+              >
+                {saving
+                  ? "Saving..."
+                  : editMode
+                  ? "Update Location"
+                  : "Save Location"}
+              </button>
 
-      </section>
-    </main>
+              <button
+                onClick={function () {
+                  resetForm();
+                  setShowModal(false);
+                }}
+                className="flex-1 bg-slate-300 hover:bg-slate-400 text-slate-950 py-3 rounded-xl font-bold"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </AdminLayout>
   );
 }

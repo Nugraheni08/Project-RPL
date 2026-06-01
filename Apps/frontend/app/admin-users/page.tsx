@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import AdminSidebar from "@/components/adminsidebar";
+import AdminLayout from "@/components/layout/AdminLayout";
 import {
   FiUsers,
   FiUserCheck,
@@ -75,13 +75,10 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
 
-      <section className="ml-64 p-8">
-
-        {/* HEADER */}
-        <div className="mb-8">
+      {/* HEADER */}
+      <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-slate-950">
             User Management
           </h1>
@@ -305,7 +302,6 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-      </section>
-    </main>
+    </AdminLayout>
   );
 }

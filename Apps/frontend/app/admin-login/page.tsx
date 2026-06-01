@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { supabase } from "../../lib/supabase";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -10,10 +11,62 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // sementara langsung masuk dashboard admin
-    router.push("/admin-dashboard");
+  var handleLogin = async function () {
+    setErrorMsg("");
+    setIsLoading(true);
+
+    try {
+      // 1. Login via Supabase Auth
+      var authResult = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (authResult.error) {
+        setErrorMsg("Login gagal: " + authResult.error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      var userId = authResult.data.user?.id;
+      if (!userId) {
+        setErrorMsg("User ID tidak ditemukan.");
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Cek role di tabel public.users
+      var userResult = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      if (userResult.error || !userResult.data) {
+        setErrorMsg("Akun tidak terdaftar di sistem Wmap.");
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+
+      if (userResult.data.role !== "Admin") {
+        setErrorMsg("Akses ditolak. Akun ini bukan admin.");
+        await supabase.auth.signOut();
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Redirect ke admin dashboard
+      router.push("/admin-dashboard");
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Terjadi kesalahan. Coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

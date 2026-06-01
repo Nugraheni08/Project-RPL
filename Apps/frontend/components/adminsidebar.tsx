@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import {
   FiHome,
   FiMapPin,
@@ -12,111 +11,90 @@ import {
   FiBarChart2,
   FiSettings,
   FiLogOut,
+  FiActivity,
+  FiMonitor,
 } from "react-icons/fi";
 
 export default function AdminSidebar() {
   const router = useRouter();
-
-const handleLogout = () => {
-  router.push("/admin-login");
-};
-
   const pathname = usePathname();
 
-  const menuItems = [
-    {
-      name: "Dashboard",
-      href: "/admin-dashboard",
-      icon: <FiHome size={20} />,
-    },
-    {
-      name: "Facility Management",
-      href: "/admin-facility",
-      icon: <FiMapPin size={20} />,
-    },
-    {
-      name: "Campus Map",
-      href: "/admin-map",
-      icon: <FiMapPin size={20} />,
-    },
-    {
-      name: "Reports",
-      href: "/admin-reports",
-      icon: <FiFileText size={20} />,
-    },
-    {
-      name: "User Management",
-      href: "/admin-users",
-      icon: <FiUsers size={20} />,
-    },
-    {
-      name: "Analytics",
-      href: "/admin-analytics",
-      icon: <FiBarChart2 size={20} />,
-    },
-    {
-      name: "Settings",
-      href: "/admin-settings",
-      icon: <FiSettings size={20} />,
-    },
-  ];
+  const handleLogout = () => {
+    router.push("/admin-login");
+  };
+
+  const isActive = (href: string) => pathname === href;
+
+  const linkClass = (href: string) => `flex items-center gap-3 px-4 py-3 font-semibold text-sm transition-all border-l-4 ${
+    isActive(href)
+      ? "bg-slate-100 text-green-800 border-green-800"
+      : "text-slate-800 hover:bg-slate-100 border-transparent"
+  }`;
 
   return (
-    <aside className="w-64 h-screen bg-white border-r border-slate-200 fixed left-0 top-0 flex flex-col">
-
+    <aside className="w-64 h-full bg-white border-r border-slate-200 flex-shrink-0 flex flex-col z-50">
       {/* LOGO */}
-      <div className="p-6 border-b">
-
-        <img
-          src="/logo-text.png"
-          alt="WMap"
-          className="w-36 mb-2"
-        />
-
-        <p className="text-slate-700 font-medium">
-          Admin Panel
-        </p>
-
+      <div className="p-6 border-b flex flex-col items-center justify-center">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <img src="/logo-icon.png" alt="logo" className="w-10 h-10 object-contain" />
+          <img src="/logo-text.png" alt="Wmap Admin" className="h-6 object-contain" />
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase text-center w-full">Admin Panel</p>
       </div>
 
       {/* MENU */}
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 py-4 space-y-1 overflow-y-auto">
 
-        {menuItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium
-              
-              ${
-                pathname === item.href
-                  ? "bg-green-600 text-white"
-                  : "text-slate-800 hover:bg-slate-100"
-              }
-              
-            `}
-          >
-            {item.icon}
+        <Link href="/admin-dashboard" className={linkClass("/admin-dashboard")}>
+          <FiHome size={20} /><span>Dashboard</span>
+        </Link>
 
-            <span>{item.name}</span>
-          </Link>
-        ))}
+        <Link href="/admin-facility" className={linkClass("/admin-facility")}>
+          <FiMapPin size={20} /><span>Facility Management</span>
+        </Link>
+
+        <Link href="/admin-map" className={linkClass("/admin-map")}>
+          <FiMonitor size={20} /><span>Map Monitoring</span>
+        </Link>
+
+        <Link href="/admin-reports" className={linkClass("/admin-reports")}>
+          <div className="flex w-full items-center">
+            <div className="flex items-center gap-3">
+              <FiFileText size={20} /><span>Reports Management</span>
+            </div>
+            <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">12</span>
+          </div>
+        </Link>
+
+        <Link href="/admin-leaderboard" className={linkClass("/admin-leaderboard")}>
+          <FiActivity size={20} /><span>Eco Leaderboard</span>
+        </Link>
+
+        <Link href="/admin-users" className={linkClass("/admin-users")}>
+          <FiUsers size={20} /><span>User Management</span>
+        </Link>
+
+        <div className="pt-4">
+          <p className="text-[10px] font-bold text-slate-400 tracking-widest uppercase px-5 mb-2">SYSTEM</p>
+        </div>
+
+        <Link href="/admin-analytics" className={linkClass("/admin-analytics")}>
+          <FiBarChart2 size={20} /><span>Analytics</span>
+        </Link>
+
+        <Link href="/admin-settings" className={linkClass("/admin-settings")}>
+          <FiSettings size={20} /><span>Settings</span>
+        </Link>
 
       </nav>
 
       {/* LOGOUT */}
-      <div className="p-4 border-t">
-
-       <button
-  onClick={handleLogout}
-  className="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2"
->
-  <FiLogOut />
-  Logout
-</button>
-
+      <div className="p-6 border-t">
+        <button onClick={handleLogout}
+          className="w-full text-slate-800 hover:text-red-600 font-bold flex items-center justify-start gap-2 transition-all">
+          <FiLogOut className="text-red-600" /> Logout
+        </button>
       </div>
-
     </aside>
   );
 }

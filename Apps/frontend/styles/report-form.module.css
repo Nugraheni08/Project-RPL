@@ -1,0 +1,343 @@
+/* ============================================================
+   REPORT ISSUE FORM — Full Page
+   Theme: Pale mint bg, white rounded inputs, forest green accents
+   ============================================================ */
+
+.report-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #E8F5EF;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.report-page::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ============================================================
+   HEADER — Hamburger + Bell
+   ============================================================ */
+.rpt-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 20px 16px 20px;
+  background: #E8F5EF;
+  flex-shrink: 0;
+}
+
+.rpt-hamburger {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #D3D9D5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.rpt-hamburger span {
+  display: block;
+  height: 2px;
+  background: #1D9E75;
+  border-radius: 2px;
+  width: 16px;
+}
+
+.rpt-hamburger span:last-child {
+  width: 11px;
+}
+
+.rpt-bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+}
+
+.rpt-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E24B4A;
+  border: 1.5px solid #E8F5EF;
+}
+
+/* ============================================================
+   TITLE SECTION
+   ============================================================ */
+.rpt-title-section {
+  padding: 0 20px 18px;
+  flex-shrink: 0;
+}
+
+.rpt-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1D9E75;
+  margin-bottom: 4px;
+}
+
+.rpt-subtitle {
+  font-size: 12px;
+  color: #8B9E96;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   FORM FIELDS
+   ============================================================ */
+.rpt-form {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rpt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rpt-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D9E75;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding-left: 4px;
+}
+
+/* ---- Dropdown Select ---- */
+.rpt-select-wrap {
+  position: relative;
+}
+
+.rpt-select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #D3D9D5;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: #1a2e4a;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.rpt-select:focus {
+  border-color: #1D9E75;
+}
+
+.rpt-select-arrow {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: #8B9E96;
+  pointer-events: none;
+}
+
+/* Dropdown overlay */
+.rpt-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #D3D9D5;
+  border-radius: 14px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.rpt-dropdown.open {
+  display: block;
+}
+
+.rpt-dropdown-item {
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a2e4a;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #F0F3F5;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.rpt-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.rpt-dropdown-item:active {
+  background: #F7F9FB;
+}
+
+/* ---- Text Input ---- */
+.rpt-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #D3D9D5;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: #1a2e4a;
+  outline: none;
+}
+
+.rpt-input:focus {
+  border-color: #1D9E75;
+}
+
+.rpt-input::placeholder {
+  color: #A0B5AA;
+}
+
+.rpt-input.readonly {
+  background: #F7F9FB;
+  color: #5F6B7A;
+  cursor: default;
+}
+
+/* ---- Text Area ---- */
+.rpt-textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid #D3D9D5;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: #fff;
+  color: #1a2e4a;
+  outline: none;
+  resize: none;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.rpt-textarea::placeholder {
+  color: #A0B5AA;
+}
+
+.rpt-textarea:focus {
+  border-color: #1D9E75;
+}
+
+/* ---- Validation Error ---- */
+.rpt-validation-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 0;
+}
+
+.rpt-error-icon {
+  font-size: 14px;
+  color: #E24B4A;
+}
+
+.rpt-error-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #E24B4A;
+}
+
+/* ---- Upload Photo Zone ---- */
+.rpt-upload-zone {
+  width: 100%;
+  border: 2px dashed #1D9E75;
+  border-radius: 14px;
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  background: #fff;
+  transition: background 0.15s;
+}
+
+.rpt-upload-zone:active {
+  background: #F7F9FB;
+}
+
+.rpt-upload-icon {
+  font-size: 28px;
+  color: #1D9E75;
+}
+
+.rpt-upload-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1D9E75;
+  text-align: center;
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+.rpt-actions {
+  padding: 20px 16px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.rpt-submit-btn {
+  width: 100%;
+  padding: 15px;
+  background: #E8ECF0;
+  color: #1D9E75;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.rpt-submit-btn:active {
+  background: #D3D9D5;
+}
+
+.rpt-discard-link {
+  background: none;
+  border: none;
+  color: #1D9E75;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

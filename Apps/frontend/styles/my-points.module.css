@@ -1,0 +1,353 @@
+/* ============================================================
+   MY POINTS — Mobile Dashboard
+   Theme: Pale mint bg, white containers, forest green accents
+   ============================================================ */
+
+.points-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #E8F5EF;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.points-page::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ============================================================
+   HEADER — Hamburger + Bell
+   ============================================================ */
+.mp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 20px 16px 20px;
+  background: #E8F5EF;
+  flex-shrink: 0;
+}
+
+.mp-hamburger {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #D3D9D5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.mp-hamburger span {
+  display: block;
+  height: 2px;
+  background: #1D9E75;
+  border-radius: 2px;
+  width: 16px;
+}
+
+.mp-hamburger span:last-child {
+  width: 11px;
+}
+
+.mp-bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+}
+
+.mp-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E24B4A;
+  border: 1.5px solid #E8F5EF;
+}
+
+/* ============================================================
+   POINTS OVERVIEW CARD
+   ============================================================ */
+.mp-overview-card {
+  margin: 0 16px 16px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px 18px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  flex-shrink: 0;
+}
+
+.mp-overview-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mp-overview-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.mp-badge-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #E1F5EE;
+  padding: 5px 12px;
+  border-radius: 50px;
+  margin-bottom: 6px;
+}
+
+.mp-badge-icon {
+  font-size: 13px;
+}
+
+.mp-badge-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1D9E75;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mp-total-label {
+  font-size: 11px;
+  color: #8B9E96;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.mp-total-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1D9E75;
+  line-height: 1;
+}
+
+.mp-rank-card {
+  width: 80px;
+  height: 80px;
+  background: #E1F5EE;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mp-medal-icon {
+  font-size: 24px;
+}
+
+.mp-rank-badge {
+  background: #1D9E75;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 50px;
+  letter-spacing: 0.4px;
+}
+
+.mp-overview-divider {
+  height: 1px;
+  background: #F0F3F5;
+  margin-bottom: 10px;
+}
+
+.mp-progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.mp-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5F6B7A;
+}
+
+.mp-progress-remaining {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1D9E75;
+}
+
+.mp-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #E8ECF0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mp-progress-fill {
+  height: 100%;
+  background: #1D9E75;
+  border-radius: 3px;
+  width: 82%;
+}
+
+/* ============================================================
+   IMPACT SUMMARY
+   ============================================================ */
+.mp-section {
+  padding: 0 16px;
+  flex-shrink: 0;
+}
+
+.mp-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a2e4a;
+  margin-bottom: 10px;
+}
+
+.mp-impact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.mp-impact-card {
+  background: #E1F5EE;
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.mp-impact-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #1D9E75;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.mp-impact-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1D9E75;
+  line-height: 1.1;
+}
+
+.mp-callout-banner {
+  background: #E1F5EE;
+  border-left: 4px solid #1D9E75;
+  border-radius: 0 12px 12px 0;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.mp-callout-text {
+  font-size: 12px;
+  color: #5F6B7A;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   RECENT ACTIVITY
+   ============================================================ */
+.mp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mp-view-all {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D9E75;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.mp-activity-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  margin-bottom: 24px;
+}
+
+.mp-act-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0F3F5;
+}
+
+.mp-act-item:last-child {
+  border-bottom: none;
+}
+
+.mp-act-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.mp-act-badge.water {
+  background: #E6F1FB;
+}
+
+.mp-act-badge.recycle {
+  background: #E1F5EE;
+}
+
+.mp-act-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mp-act-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2e4a;
+}
+
+.mp-act-time {
+  font-size: 11px;
+  color: #8B9E96;
+  margin-top: 2px;
+}
+
+.mp-act-pts {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1D9E75;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

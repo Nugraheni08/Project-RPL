@@ -1,0 +1,328 @@
+/* ============================================================
+   HISTORY DASHBOARD — Refill & Waste Disposal History
+   Theme: Pale mint bg, white rounded containers, green & blue accents
+   ============================================================ */
+
+.history-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #E8F5EF;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.history-page::-webkit-scrollbar {
+  width: 0;
+}
+
+/* ============================================================
+   HEADER — Hamburger + Bell
+   ============================================================ */
+.hist-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 20px 16px 20px;
+  background: #E8F5EF;
+  flex-shrink: 0;
+}
+
+.hist-hamburger {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #D3D9D5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.hist-hamburger span {
+  display: block;
+  height: 2px;
+  background: #1D9E75;
+  border-radius: 2px;
+  width: 16px;
+}
+
+.hist-hamburger span:last-child {
+  width: 11px;
+}
+
+.hist-bell {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+}
+
+.hist-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #E24B4A;
+  border: 1.5px solid #E8F5EF;
+}
+
+/* ============================================================
+   MONTHLY GOALS — Grid Layout
+   ============================================================ */
+.hist-goals-section {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Top card — full width */
+.hist-goal-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.hist-goal-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.hist-goal-icon-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+}
+
+.hist-goal-icon-circle.blue-bg {
+  background: #E6F1FB;
+}
+
+.hist-goal-icon-circle.green-bg {
+  background: #E1F5EE;
+}
+
+.hist-goal-icon-circle.green-solid {
+  background: #1D9E75;
+}
+
+.hist-goal-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8B9E96;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.hist-goal-value {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 10px;
+  line-height: 1.1;
+}
+
+.hist-goal-value.blue {
+  color: #185FA5;
+}
+
+.hist-goal-value.green {
+  color: #1D9E75;
+}
+
+.hist-goal-value.dark {
+  color: #1a2e4a;
+}
+
+.hist-progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #E8ECF0;
+  overflow: hidden;
+}
+
+.hist-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.hist-progress-fill.blue {
+  background: #185FA5;
+}
+
+.hist-progress-fill.green {
+  background: #1D9E75;
+}
+
+.hist-progress-fill.dark-gray {
+  background: #5F6B7A;
+}
+
+/* Bottom two cards — grid */
+.hist-goals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.hist-goal-card-sm {
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.hist-goal-card-sm.green-bg-card {
+  background: #1D9E75;
+}
+
+.hist-goal-card-sm.green-bg-card .hist-goal-label {
+  color: rgba(255,255,255,0.75);
+}
+
+.hist-goal-card-sm.green-bg-card .hist-goal-value {
+  color: #1a2e4a;
+}
+
+.hist-goal-card-sm.green-bg-card .hist-progress-bar {
+  background: rgba(255,255,255,0.3);
+}
+
+.hist-goal-card-sm.green-bg-card .hist-progress-fill {
+  background: #5F6B7A;
+}
+
+.hist-goal-value-sm {
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.hist-goal-value-sm.green {
+  color: #1D9E75;
+}
+
+.hist-goal-value-sm.dark {
+  color: #1a2e4a;
+}
+
+/* ============================================================
+   RECENT ACTIVITY SECTION
+   ============================================================ */
+.hist-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px 24px;
+}
+
+.hist-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.hist-section-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a2e4a;
+}
+
+.hist-view-all {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1D9E75;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Activity list inside a single white card */
+.hist-activity-card {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.hist-act-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #F0F3F5;
+}
+
+.hist-act-item:last-child {
+  border-bottom: none;
+}
+
+.hist-act-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.hist-act-badge.water {
+  background: #E6F1FB;
+}
+
+.hist-act-badge.recycle {
+  background: #E1F5EE;
+}
+
+.hist-act-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hist-act-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2e4a;
+}
+
+.hist-act-time {
+  font-size: 11px;
+  color: #8B9E96;
+  margin-top: 2px;
+}
+
+.hist-act-pts {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1D9E75;
+  white-space: nowrap;
+  flex-shrink: 0;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import AdminSidebar from "@/components/adminsidebar";
+import AdminLayout from "@/components/layout/AdminLayout";
 import {
   BarChart,
   Bar,
@@ -33,12 +33,9 @@ const reportData = [
 
 export default function AdminAnalyticsPage() {
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
 
-      <section className="ml-64 p-8">
-
-        {/* HEADER */}
+      {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-slate-950">
             Analytics Dashboard
@@ -246,7 +243,6 @@ export default function AdminAnalyticsPage() {
 
         </div>
 
-      </section>
-    </main>
+    </AdminLayout>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import AdminSidebar from "@/components/adminsidebar";
+import AdminLayout from "@/components/layout/AdminLayout";
 import {
   FiUser,
   FiLock,
@@ -36,12 +36,9 @@ export default function AdminSettingsPage() {
     useState(true);
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
 
-      <section className="ml-64 p-8">
-
-        {/* HEADER */}
+      {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-slate-950">
             Settings
@@ -278,7 +275,6 @@ export default function AdminSettingsPage() {
 
         </div>
 
-      </section>
-    </main>
+    </AdminLayout>
   );
 }

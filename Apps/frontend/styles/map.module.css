@@ -1,0 +1,224 @@
+/* ============================================================
+   MAP CARD & CONTROLS
+   ============================================================ */
+.map-card {
+  margin: 0 16px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+  position: relative;
+  background: #e8f4ea;
+}
+
+.map-container {
+  width: 100%;
+  height: 220px;
+}
+
+.map-filter-row {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 500;
+}
+
+.map-filter-btn {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  transition: all 0.15s;
+}
+
+.map-filter-btn.active-water {
+  background: var(--green-light);
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+
+.map-filter-btn.active-trash {
+  background: #F3EDE8;
+  border-color: #8B5E3C;
+  color: #6B4226;
+}
+
+.map-legend {
+  background: white;
+  padding: 10px 14px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.legend-dot.green { background: #1D9E75; }
+.legend-dot.red   { background: #E24B4A; }
+.legend-dot.brown { background: #C17B42; }
+.legend-icon      { font-size: 14px; }
+
+.map-overlay-btns {
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.map-btn {
+  background: var(--green);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 3px 12px rgba(29,158,117,0.4);
+  transition: all 0.2s;
+}
+
+.map-btn.secondary {
+  background: white;
+  color: var(--green-dark);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+
+.map-btn.trash-btn {
+  background: #8B5E3C;
+  box-shadow: 0 3px 12px rgba(139,94,60,0.4);
+}
+
+.accuracy-label {
+  position: absolute;
+  top: 46px;
+  right: 8px;
+  z-index: 500;
+  background: white;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  display: none;
+}
+
+/* ---- Panel Rute Navigasi ---- */
+.route-panel {
+  position: absolute;
+  top: 46px;
+  left: 8px;
+  z-index: 500;
+  background: white;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 180px;
+}
+
+.route-panel.visible {
+  display: flex;
+}
+
+.route-dest {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.route-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.route-dist {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.route-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.route-mode {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mode-btn {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
+  padding: 3px 0;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.mode-btn.active {
+  border-color: var(--green);
+  background: var(--green-light);
+}
+
+.route-clear {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+/* Leaflet Override — Menyembunyikan tombol zoom bawaan */
+:global(.leaflet-control-zoom) {
+  display: none;
+}

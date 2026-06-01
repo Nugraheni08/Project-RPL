@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import AdminSidebar from "@/components/adminsidebar";
+import AdminLayout from "@/components/layout/AdminLayout";
 import {
   FiPlus,
   FiEdit2,
@@ -133,12 +133,9 @@ const resetForm = () => {
   );
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
 
-      <section className="ml-64 p-8">
-
-        {/* HEADER */}
+      {/* HEADER */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-extrabold text-slate-950">
@@ -368,7 +365,6 @@ onClick={() => {
             </div>
           </div>
         )}
-      </section>
-    </main>
+    </AdminLayout>
   );
 }

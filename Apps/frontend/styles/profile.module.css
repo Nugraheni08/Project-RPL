@@ -1,0 +1,425 @@
+/* ============================================================
+   PROFILE PANEL - Mobile Profile UI
+   Theme: Pale mint bg, white cards, forest green accents
+   ============================================================ */
+
+.profile-panel {
+  display: none;
+  position: absolute;
+  inset: 0 0 56px 0;
+  background: #E8F5EF; /* pale mint */
+  overflow-y: auto;
+  z-index: 50;
+  flex-direction: column;
+}
+
+.profile-panel::-webkit-scrollbar {
+  width: 0;
+}
+
+.profile-panel.open {
+  display: flex;
+}
+
+/* ============================================================
+   HEADER - Logo + Notification Bell
+   ============================================================ */
+.profile-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 48px 20px 16px 20px;
+  background: #E8F5EF;
+}
+
+.profile-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #D3D9D5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #1D9E75;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.profile-back-btn:active {
+  background: #E8F5EF;
+}
+
+.profile-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1D9E75;
+}
+
+.profile-logo-icon {
+  font-size: 22px;
+}
+
+.profile-bell {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+}
+
+.profile-bell-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #E24B4A;
+  border: 1.5px solid #E8F5EF;
+}
+
+/* ============================================================
+   PROFILE SUMMARY - Avatar + Name
+   ============================================================ */
+.profile-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 20px 20px 20px;
+}
+
+.profile-avatar-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #C5E5D5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1D9E75;
+  border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.profile-avatar-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1D9E75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #fff;
+  border: 3px solid #E8F5EF;
+  cursor: pointer;
+}
+
+.profile-display-name {
+  margin-top: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1D9E75;
+  text-align: center;
+}
+
+/* ============================================================
+   SECTION HEADINGS
+   ============================================================ */
+.profile-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 8px 20px;
+  margin-top: 4px;
+}
+
+.profile-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8B9E96;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-section-edit {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1D9E75;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* ============================================================
+   INFO CARDS - White rounded cards
+   ============================================================ */
+.profile-info-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.profile-info-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.profile-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #A0B5AA;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-info-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2e4a;
+}
+
+.profile-info-value.profile-info-empty {
+  color: #A0B5AA;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.profile-info-input {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  border-bottom: 2px solid #D3D9D5;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2e4a;
+  background: transparent;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.profile-info-input:focus {
+  border-bottom-color: #1D9E75;
+}
+
+.profile-info-input::placeholder {
+  color: #A0B5AA;
+  font-weight: 400;
+}
+
+/* ============================================================
+   SECURITY SECTION
+   ============================================================ */
+.profile-security-section {
+  padding: 0 16px;
+  margin-top: 20px;
+}
+
+.profile-security-section .profile-section-header {
+  padding: 0 4px 8px 4px;
+  margin-top: 0;
+}
+
+.profile-security-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: pointer;
+}
+
+.profile-security-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-security-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a2e4a;
+}
+
+.profile-security-sub {
+  font-size: 12px;
+  color: #A0B5AA;
+}
+
+.profile-security-arrow {
+  font-size: 18px;
+  color: #C5CCC7;
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+.profile-actions {
+  padding: 24px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-save-changes {
+  width: 100%;
+  padding: 14px;
+  background: #1D9E75;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(29, 158, 117, 0.25);
+}
+
+.btn-save-changes:active {
+  background: #178A63;
+}
+
+.btn-logout-link {
+  background: none;
+  border: none;
+  color: #1D9E75;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ============================================================
+   MAP SEARCH & DROPDOWN (unchanged)
+   ============================================================ */
+.map-search-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.map-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.map-search-input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  border: 1.5px solid #dce8e3;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 13px;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+  color: #1a2e4a;
+}
+
+.map-search-input:focus {
+  border-color: #1D9E75;
+}
+
+.map-search-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #dce8e3;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 999;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+}
+
+.map-search-dropdown.open {
+  display: block;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+  color: #1a2e4a;
+}
+
+.dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.dropdown-item:active {
+  background: #f2f7f4;
+}
+
+.dropdown-item-icon {
+  font-size: 16px;
+}
+
+.dropdown-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dropdown-item-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.dropdown-item-addr {
+  font-size: 11px;
+  color: #888;
+}
+
+.dropdown-empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #aaa;
+}
