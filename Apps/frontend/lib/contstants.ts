@@ -44,7 +44,7 @@ export const waterStations = [
   },
   {
     name: "Water Station Fapet",
-    lat: -6.55533, lng: 106.72699,
+    lat: -6.557332, lng: 106.722231,
     addr: "Komplek Parkir Fakultas Peternakan",
     fullAddr: "Fakultas Peternakan IPB, Jl. Agatis, Babakan, Dramaga, Bogor 16680",
     rating: 4.5, reviews: 3,
@@ -70,7 +70,7 @@ export const trashBins = [
   { name: "CCR Lantai 2 (Titik 2)",      lat: -6.55637,   lng: 106.73129,   addr: "CCR Lantai 2 Titik 2" },
   { name: "Depan Perpus",                lat: -6.55894,   lng: 106.72710,   addr: "Depan Perpustakaan IPB" },
   { name: "Depan GPK",                   lat: -6.55895,   lng: 106.72687,   addr: "Depan Graha Pertamina Kampus" },
-  { name: "Halaman Gd. Sarjana Fapet",   lat: -6.55535,   lng: 106.72701,   addr: "Komplek Parkir Fakultas Peternakan" },
+  { name: "Halaman Gd. Sarjana Fapet",   lat: -6.5570202, lng: 106.7221242, addr: "Komplek Parkir Fakultas Peternakan" },
   { name: "Koridor Semi-Outdoor CCR",    lat: -6.55645,   lng: 106.73112,   addr: "Koridor Terbuka CCR, Jl. Meranti" },
   { name: "Koridor Dalam CCR",           lat: -6.55648,   lng: 106.73125,   addr: "Koridor Dalam CCR, Jl. Meranti" },
 ];
