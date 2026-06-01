@@ -1,4 +1,4 @@
-  'use client';
+'use client';
 
   import { useEffect, useRef, useState } from 'react';
   import { supabase } from '../../lib/supabase';
@@ -27,6 +27,15 @@
     localStorage.setItem(key, String(expiry));
   }
 
+  interface Review {
+    id: string;
+    user_name: string;
+    user_avatar?: string;
+    stars: number;
+    comment: string;
+    created_at: string;
+  }
+
   interface StationModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -45,6 +54,70 @@
     var [isSubmitting, setIsSubmitting] = useState(false);
     var [cooldownRemaining, setCooldownRemaining] = useState(0);
     var cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Review state
+    var [reviews, setReviews] = useState<Review[]>([]);
+    var [reviewsLoading, setReviewsLoading] = useState(false);
+    var channelRef = useRef<any>(null);
+
+    // ── Fetch reviews from DB + subscribe to real-time ──────────
+    useEffect(function () {
+      if (!isOpen || !activeStation) return;
+
+      var fetchReviews = async function () {
+        setReviewsLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('reviews')
+            .select('id, stars, comment, created_at, users!reviews_user_id_fkey(username)')
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (error) {
+            console.error('Fetch reviews error:', error);
+            return;
+          }
+
+          var mapped: Review[] = (data || []).map(function (r: any) {
+            return {
+              id: r.id,
+              user_name: r.users?.username || 'Anonim',
+              stars: r.stars,
+              comment: r.comment || '',
+              created_at: r.created_at,
+            };
+          });
+          setReviews(mapped);
+        } catch (err) {
+          console.error('Fetch reviews exception:', err);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+
+      fetchReviews();
+
+      // ── Subscribe to real-time changes ──────────────────────────
+      var channel = supabase
+        .channel('reviews-channel')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'reviews' },
+          function () {
+            fetchReviews();
+          }
+        )
+        .subscribe();
+
+      channelRef.current = channel;
+
+      return function () {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+      };
+    }, [isOpen, activeStation]);
 
     // Check cooldown when modal opens
     useEffect(function () {
@@ -121,10 +194,6 @@
         var photoUrl = urlResult.data.publicUrl;
 
         // 4) Insert into refill_activity
-        // NOTE: facility_id is NOT sent — station IDs from the frontend are
-        // hardcoded strings ("water-0", etc.), not real DB UUIDs.
-        // The column allows NULL (ON DELETE SET NULL).
-        // Trigger handle_refill_points auto-adds +10 to users.total_points.
         var insertResult = await supabase
           .from('refill_activity')
           .insert({
@@ -193,6 +262,30 @@
 
     var stationId = activeStation?.id || activeStation?.name || 'unknown';
 
+    // ── Compute rating stats ───────────────────────────────────────
+    var avg = activeStation?.rating || 5.0;
+    if (reviews.length > 0) {
+      var totalStars = reviews.reduce(function (s, r) { return s + r.stars; }, 0);
+      avg = totalStars / reviews.length;
+    }
+    var filled = Math.round(avg);
+    var stars = '★'.repeat(filled) + '☆'.repeat(5 - filled);
+    var reviewsCount = reviews.length || (activeStation?.reviews || 0);
+
+    // Rating breakdown bars (1-5)
+    var starCounts = [0, 0, 0, 0, 0]; // index 0=star1, 4=star5
+    reviews.forEach(function (r) {
+      if (r.stars >= 1 && r.stars <= 5) starCounts[r.stars - 1]++;
+    });
+    var maxCount = Math.max(1, Math.max.apply(null, starCounts));
+    var breakdown = [5, 4, 3, 2, 1].map(function (star) {
+      var count = starCounts[star - 1];
+      return { star: star, count: count, pct: Math.round((count / maxCount) * 100) };
+    });
+
+    // Recent comments (last 5)
+    var recentReviews = reviews.slice(0, 5);
+
     useEffect(() => {
       if (!isOpen || !activeStation || !miniMapContainer.current) return;
       
@@ -250,13 +343,24 @@
       };
     }, [isOpen, activeStation]);
 
-    if (!isOpen || !activeStation) return null;
+    // Helper: relatif time
+    var getRelativeTime = function (dateStr: string): string {
+      if (!dateStr) return '';
+      var diff = Date.now() - new Date(dateStr).getTime();
+      var hrs = Math.floor(diff / 3600000);
+      if (hrs < 1) return 'Baru saja';
+      if (hrs < 24) return hrs + ' jam lalu';
+      var days = Math.floor(hrs / 24);
+      if (days < 7) return days + ' hari lalu';
+      return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
 
-    const avg = activeStation.rating || 5.0;
-    const filled = Math.round(avg);
-    const stars = '★'.repeat(filled) + '☆'.repeat(5 - filled);
-    const reviewsCount = activeStation.reviews || 0;
-    const comments = activeStation.comments || [];
+    // Inisial untuk avatar
+    var getInitials = function (name: string): string {
+      return (name || '?').substring(0, 2).toUpperCase();
+    };
+
+    if (!isOpen || !activeStation) return null;
 
     return (
       <div className={`${styles['modal-overlay']} ${styles.open}`} onClick={onClose}>
@@ -371,6 +475,7 @@
             <span className={styles['addr-text']}>{activeStation.fullAddr || 'Babakan, Dramaga, Bogor Regency, West Java 16680'}</span>
           </div>
 
+          {/* ============ DYNAMIC REVIEW SUMMARY ============ */}
           <div className={styles['review-section']}>
             <div className={styles['review-header']}>
               <span className={styles['review-title']}>Review summary</span>
@@ -379,13 +484,12 @@
             <div className={styles['review-big']}>
               <div className={styles['review-avg-num']}>{avg.toFixed(1)}</div>
               <div className={styles['review-bar-wrap']}>
-                {[5, 4, 3, 2, 1].map((i) => {
-                  const pct = i === 5 ? 100 : 0;
+                {breakdown.map(function (b) {
                   return (
-                    <div key={i} className={styles['review-bar-row']}>
-                      <span className={styles['review-bar-lbl']}>{i}</span>
+                    <div key={b.star} className={styles['review-bar-row']}>
+                      <span className={styles['review-bar-lbl']}>{b.star}</span>
                       <div className={styles['review-bar-track']}>
-                        <div className={styles['review-bar-fill']} style={{ width: `${pct}%` }}></div>
+                        <div className={styles['review-bar-fill']} style={{ width: b.pct + '%' }}></div>
                       </div>
                     </div>
                   );
@@ -396,33 +500,46 @@
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <div className={styles['reviewer-avatar']} style={{ width: '32px', height: '32px', fontSize: '12px', fontWeight: 700 }}>ZZ</div>
               <div style={{ display: 'flex', gap: '4px' }}>
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <span key={s} style={{ fontSize: '22px', color: '#ddd', cursor: 'pointer' }} onClick={onReviewClick}>☆</span>
-                ))}
+                {[1, 2, 3, 4, 5].map(function (s) {
+                  return (
+                    <span key={s} style={{ fontSize: '22px', color: '#ddd', cursor: 'pointer' }} onClick={onReviewClick}>☆</span>
+                  );
+                })}
               </div>
             </div>
           </div>
 
+          {/* ============ DYNAMIC REVIEWS LIST ============ */}
           <div className={styles['review-section']} style={{ paddingTop: '4px' }}>
             <div className={styles['review-title']}>Reviews</div>
           </div>
           
           <div className={styles['comments-list']}>
-            {comments.map((c: any, idx: number) => (
-              <div key={idx} className={styles['comment-item']}>
-                <div className={styles['comment-avatar']}>
-                  <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#9FE1CB,#1D9E75)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: 'white' }}>
-                    {c.avatar}
+            {reviewsLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#8B9E96', fontSize: '13px' }}>⏳ Memuat ulasan...</div>
+            ) : recentReviews.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#8B9E96', fontSize: '13px' }}>Belum ada ulasan. Jadilah yang pertama!</div>
+            ) : (
+              recentReviews.map(function (r) {
+                return (
+                  <div key={r.id} className={styles['comment-item']}>
+                    <div className={styles['comment-avatar']}>
+                      <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg,#9FE1CB,#1D9E75)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: 'white' }}>
+                        {getInitials(r.user_name)}
+                      </div>
+                    </div>
+                    <div className={styles['comment-body']}>
+                      <div className={styles['comment-name']}>{r.user_name}</div>
+                      <div className={styles['comment-time']}>
+                        {'★'.repeat(r.stars)}{'☆'.repeat(5 - r.stars)} · {getRelativeTime(r.created_at)}
+                      </div>
+                      <div className={styles['comment-text']}>{r.comment}</div>
+                    </div>
+                    <button className={styles['comment-more']}>⋯</button>
                   </div>
-                </div>
-                <div className={styles['comment-body']}>
-                  <div className={styles['comment-name']}>{c.name}</div>
-                  <div className={styles['comment-time']}>{'★'.repeat(c.stars)}{'☆'.repeat(5 - c.stars)} · {c.time}</div>
-                  <div className={styles['comment-text']}>{c.text}</div>
-                </div>
-                <button className={styles['comment-more']}>⋯</button>
-              </div>
-            ))}
+                );
+              })
+            )}
           </div>
 
           <button className={styles['see-all-reviews']}>See all reviews</button>

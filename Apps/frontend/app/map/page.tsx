@@ -102,66 +102,24 @@ export default function MapPage() {
 
   useEffect(function () {
     var fetchStats = async function () {
-      var result = await supabase.auth.getSession();
-      var session = result.data.session;
-      if (!session) return;
-
-      var userId = session.user.id;
-      var weekAgo = getWeekAgoISO();
-
       setStatsLoading(true);
-
       try {
-        // 1) Hitung bottles_saved = SUM(volume_ml) / 500 dari semua refill
-        var totalBottlesPromise = supabase
-          .from('refill_activity')
-          .select('volume_ml')
-          .eq('user_id', userId);
-
-        // 2) Bottles minggu ini
-        var weekBottlesPromise = supabase
-          .from('refill_activity')
-          .select('volume_ml')
-          .eq('user_id', userId)
-          .gte('created_at', weekAgo);
-
-        // 3) Rank & points dari RPC
-        var rankPromise = fetchUserRank(userId);
-
-        // 4) Recent activities
-        var activitiesPromise = fetchRecentActivities(userId, 5);
-
-        var results = await Promise.all([
-          totalBottlesPromise,
-          weekBottlesPromise,
-          rankPromise,
-          activitiesPromise,
-        ]);
-
-        var totalData = results[0].data;
-        var weekData = results[1].data;
-
-        // Hitung bottles: sum volume_ml / 500, round ke integer
-        var calcBottles = function (rows: any[] | null): number {
-          if (!rows || rows.length === 0) return 0;
-          var totalMl = rows.reduce(function (sum: number, row: any) {
-            return sum + (row.volume_ml || 0);
-          }, 0);
-          return Math.round(totalMl / 500);
-        };
-
-        var bottlesSaved = calcBottles(totalData);
-        var bottlesWeek = calcBottles(weekData);
-
-        // Ambil points & rank dari store (sudah di-set oleh fetchUserRank)
-        var storeState = useActivityStore.getState();
+        var res = await fetch('/api/user/dashboard');
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Gagal memuat statistik.');
 
         setDashboardStats({
-          bottles_saved: bottlesSaved,
-          bottles_this_week: bottlesWeek,
-          eco_points: storeState.userPoints,
-          rank: storeState.userRank,
+          bottles_saved: json.bottlesSaved || 0,
+          bottles_this_week: json.bottlesThisWeek || 0,
+          eco_points: json.ecoPoints || 0,
+          rank: json.rank || 0,
         });
+
+        var sessionRes = await supabase.auth.getSession();
+        var userId = sessionRes.data.session?.user?.id;
+        if (userId) {
+          await fetchRecentActivities(userId, 5);
+        }
       } catch (err) {
         console.error('Gagal fetch dashboard stats:', err);
       } finally {
@@ -169,10 +127,9 @@ export default function MapPage() {
       }
     };
 
-    // Store in ref so modals can call it
     refreshStatsRef.current = fetchStats;
     fetchStats();
-  }, [fetchUserRank, fetchRecentActivities]);
+  }, [fetchRecentActivities]);
 
   useEffect(function () {
     var checkUser = async function () {

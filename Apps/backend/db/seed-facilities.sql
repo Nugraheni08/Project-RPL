@@ -31,7 +31,7 @@ INSERT INTO public.facilities (name, type, category, latitude, longitude, status
 ('CCR 1.09',               'refill_air', 'Water Station', -6.5565914, 106.7312138, 'aktif', 'Stasiun isi ulang di dekat ruang CCR 1.09.'),
 ('Satari',                 'refill_air', 'Water Station', -6.5553873, 106.7240151, 'aktif', 'Water station di area Satari.'),
 ('Fahutan',                'refill_air', 'Water Station', -6.5568300, 106.7306300, 'aktif', 'Water station di Fakultas Kehutanan.'),
-('Water Station Fapet',    'refill_air', 'Water Station', -6.5553300, 106.7269900, 'aktif', 'Mesin dispenser biru "Wakaf IPB" di samping pintu "RUANG ABSEN", Komplek Parkir Fakultas Peternakan. CPVC+5W7');
+('Water Station Fapet',    'refill_air', 'Water Station', -6.5573320, 106.7222310, 'aktif', 'Mesin dispenser biru "Wakaf IPB" di samping pintu "RUANG ABSEN", Komplek Parkir Fakultas Peternakan. CPVC+5W7');
 
 -- ============================================================
 -- 2. TEMPAT SAMPAH
@@ -51,7 +51,7 @@ INSERT INTO public.facilities (name, type, category, latitude, longitude, status
 ('CCR Lantai 2 (Titik 2)',       'tempat_sampah', 'Tempat Sampah', -6.5563700, 106.7312900, 'aktif', 'Tempat sampah di lantai 2 CCR titik 2.'),
 ('Depan Perpus',                 'tempat_sampah', 'Tempat Sampah', -6.5589400, 106.7271000, 'aktif', 'Tempat sampah di depan Perpustakaan IPB.'),
 ('Depan GPK',                    'tempat_sampah', 'Tempat Sampah', -6.5589500, 106.7268700, 'aktif', 'Tempat sampah di depan GPK (Graha Pertamina Kampus).'),
-('Halaman Gedung Sarjana Fapet', 'tempat_sampah', 'Tempat Sampah', -6.5553500, 106.7270100, 'aktif', '3 tempat sampah (kuning, merah, hijau) di samping dinding putih berlantai ubin, Komplek Parkir Fapet. CPVC+5W7'),
+('Halaman Gedung Sarjana Fapet', 'tempat_sampah', 'Tempat Sampah', -6.5570202, 106.7221242, 'aktif', '3 tempat sampah (kuning, merah, hijau) di samping dinding putih berlantai ubin, Komplek Parkir Fapet. CPVC+5W7'),
 ('Koridor Semi-Outdoor CCR',     'tempat_sampah', 'Tempat Sampah', -6.5564500, 106.7311200, 'aktif', '3 tempat sampah di koridor terbuka gedung CCR dengan tiang abu-abu dan pagar putih, Jl. Meranti. CPVJ+HVJ'),
 ('Koridor Dalam CCR',            'tempat_sampah', 'Tempat Sampah', -6.5564800, 106.7312500, 'aktif', '3 tempat sampah di dalam koridor gedung CCR berlantai keramik putih, samping barisan pintu kelas, Jl. Meranti. CPVJ+HVJ');
 

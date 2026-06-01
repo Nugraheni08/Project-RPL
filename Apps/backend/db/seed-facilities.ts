@@ -99,8 +99,8 @@ const facilities: FacilitySeed[] = [
     name: 'Water Station Fapet',
     type: 'refill_air',
     category: 'Water Station',
-    latitude: -6.55533,
-    longitude: 106.72699,
+    latitude: -6.557332,
+    longitude: 106.722231,
     description:
       'Mesin dispenser biru "Wakaf IPB" di samping pintu "RUANG ABSEN", Komplek Parkir Fakultas Peternakan. CPVC+5W7',
   },
@@ -222,8 +222,8 @@ const facilities: FacilitySeed[] = [
     name: 'Halaman Gedung Sarjana Fapet',
     type: 'tempat_sampah',
     category: 'Tempat Sampah',
-    latitude: -6.55535,
-    longitude: 106.72701,
+    latitude: -6.5570202,
+    longitude: 106.7221242,
     description:
       '3 tempat sampah (kuning, merah, hijau) di samping dinding putih berlantai ubin, Komplek Parkir Fapet. CPVC+5W7',
   },

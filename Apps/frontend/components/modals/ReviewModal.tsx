@@ -9,9 +9,10 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   locationName?: string;
+  facilityId?: string;
 }
 
-export default function ReviewModal({ isOpen, onClose, locationName = 'Waste Bin Fmipa Kering' }: ReviewModalProps) {
+export default function ReviewModal({ isOpen, onClose, locationName = 'Waste Bin Fmipa Kering', facilityId }: ReviewModalProps) {
   const { displayName } = useAuthStore();
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -34,16 +35,29 @@ export default function ReviewModal({ isOpen, onClose, locationName = 'Waste Bin
     setIsSubmitting(true);
 
     try {
-      await new Promise(function (resolve) { return setTimeout(resolve, 1000); });
-      showToast('Ulasan berhasil dikirim! (+5 Poin)', '⭐');
+      // Kirim ke API route untuk insert ke DB + Realtime sync
+      const res = await fetch('/api/facility/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          facilityId: facilityId || locationName, // fallback ke nama jika tidak ada UUID
+          rating,
+          comment,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal menyimpan ulasan.');
+
+      showToast(json.message || 'Ulasan berhasil dikirim!', '⭐');
 
       setRating(0);
       setHoverRating(0);
       setComment('');
       onClose();
-    } catch (error) {
-      console.error(error);
-      showToast('Gagal mengirim ulasan.', '⚠️');
+    } catch (error: any) {
+      console.error('REVIEW_SUBMIT_ERROR:', error);
+      showToast(error.message || 'Gagal mengirim ulasan.', '⚠️');
     } finally {
       setIsSubmitting(false);
     }

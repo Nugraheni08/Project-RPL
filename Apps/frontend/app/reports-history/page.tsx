@@ -6,65 +6,16 @@ import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
 import styles from '@/styles/reports-history.module.css';
 
-/* ============================================================
-   DYNAMIC REPORTS DATA ARRAY
-   ============================================================ */
-var USER_REPORTS = [
-  {
-    id: 1,
-    type: 'REFILL WATER',
-    title: 'Refill water at Fahutan',
-    desc: 'Mesin rusak, air tidak keluar.',
-    status: 'IN PROGRESS',
-    date: 'May 1, 2026',
-    bannerIcon: '🚰',
-    bannerStyle: 'water-bg',
-  },
-  {
-    id: 2,
-    type: 'WASTE BIN',
-    title: 'Waste Bin at Fapet Full',
-    desc: 'Tempat sampah sudah penuh dan belum diangkut.',
-    status: 'RESOLVED',
-    date: 'April 28, 2026',
-    bannerIcon: '🗑️',
-    bannerStyle: 'trash-bg',
-  },
-  {
-    id: 3,
-    type: 'REFILL WATER',
-    title: 'Refill at Common Classroom',
-    desc: 'Tekanan air rendah, perlu pengecekan pompa.',
-    status: 'PENDING',
-    date: 'April 25, 2026',
-    bannerIcon: '💧',
-    bannerStyle: 'water-bg',
-  },
-  {
-    id: 4,
-    type: 'WASTE BIN',
-    title: 'Waste Bin at Rektorat Damaged',
-    desc: 'Tutup tempat sampah hilang, perlu penggantian.',
-    status: 'RESOLVED',
-    date: 'April 20, 2026',
-    bannerIcon: '♻️',
-    bannerStyle: 'trash-bg',
-  },
-  {
-    id: 5,
-    type: 'REFILL WATER',
-    title: 'Refill station at Fapet leaking',
-    desc: 'Ada kebocoran kecil di pipa utama, air menetes terus.',
-    status: 'IN PROGRESS',
-    date: 'April 15, 2026',
-    bannerIcon: '💧',
-    bannerStyle: 'water-bg',
-  },
-];
-
-/* Dynamic counters derived from array */
-var TOTAL_ACTIVE = USER_REPORTS.filter(function (r) { return r.status === 'IN PROGRESS' || r.status === 'PENDING'; }).length;
-var TOTAL_RESOLVED = USER_REPORTS.filter(function (r) { return r.status === 'RESOLVED'; }).length;
+interface UserReport {
+  id: string;
+  type: string;
+  location_ref: string;
+  description: string;
+  status: string;
+  created_at: string;
+  bannerIcon: string;
+  bannerStyle: string;
+}
 
 function getStatusClass(status: string): string {
   if (status === 'IN PROGRESS') return styles['in-progress'];
@@ -73,30 +24,116 @@ function getStatusClass(status: string): string {
   return '';
 }
 
+function formatStatus(status: string): string {
+  if (status === 'PENDING') return 'Pending';
+  if (status === 'IN PROGRESS') return 'In Progress';
+  if (status === 'RESOLVED') return 'Resolved';
+  return status;
+}
+
+function formatType(type: string): string {
+  const t = (type || '').toLowerCase();
+  if (t.includes('refill') || t.includes('water')) return 'REFILL WATER';
+  if (t.includes('sampah') || t.includes('waste') || t.includes('bin')) return 'WASTE BIN';
+  return type.toUpperCase();
+}
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '-';
+  try {
+    return new Date(dateStr).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch (_e) {
+    return dateStr;
+  }
+}
+
 export default function ReportsHistoryPage() {
   var router = useRouter();
-  var [isLoading, setIsLoading] = useState(true);
-  var [visibleCount, setVisibleCount] = useState(4);
+  var [reports, setReports] = useState<UserReport[]>([]);
+  var [loading, setLoading] = useState(true);
+  var [error, setError] = useState('');
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  var [visibleCount, setVisibleCount] = useState(4);
 
+  // ── Auth check + fetch data ──────────────────────────────────
   useEffect(function () {
-    var checkAuth = async function () {
-      var result = await supabase.auth.getSession();
-      if (!result.data.session) {
-        router.replace('/auth');
-        return;
+    var init = async function () {
+      try {
+        // 1. Cek session client-side
+        var sessionResult = await supabase.auth.getSession();
+        if (!sessionResult.data.session) {
+          router.replace('/auth');
+          return;
+        }
+
+        // 2. Fetch reports milik user ini dari API
+        var res = await fetch('/api/reports/user');
+        var json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Gagal memuat laporan.');
+
+        setReports(json.reports || []);
+      } catch (err: unknown) {
+        var msg = err instanceof Error ? err.message : 'Unknown error';
+        setError(msg);
+        console.error('USER_REPORTS_FETCH_ERROR:', err);
+      } finally {
+        setLoading(false);
       }
-      setIsLoading(false);
     };
-    checkAuth();
+    init();
   }, [router]);
 
-  if (isLoading) {
-    return <div style={{ minHeight: '100vh', background: '#E8F5EF' }} />;
+  // ── Dynamic summary counters ─────────────────────────────────
+  var activeReports = reports.filter(function (r) {
+    return r.status === 'IN PROGRESS' || r.status === 'PENDING';
+  }).length;
+  var resolvedReports = reports.filter(function (r) {
+    return r.status === 'RESOLVED';
+  }).length;
+
+  // ── Loading state ────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div id="main-app">
+        <div className={styles['reports-page']} style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+          <div style={{ fontSize: '32px', animation: 'spin 1s linear infinite' }}>⏳</div>
+          <p style={{ marginTop: '12px', fontSize: '14px', color: '#8B9E96', fontWeight: 600 }}>Memuat laporan...</p>
+        </div>
+      </div>
+    );
   }
 
-  var visibleReports = USER_REPORTS.slice(0, visibleCount);
-  var hasMore = visibleCount < USER_REPORTS.length;
+  // ── Error state ──────────────────────────────────────────────
+  if (error) {
+    return (
+      <div id="main-app">
+        <div className={styles['reports-page']} style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+          <div style={{ fontSize: '48px' }}>⚠️</div>
+          <p style={{ marginTop: '8px', fontSize: '14px', color: '#E24B4A', fontWeight: 700, textAlign: 'center' }}>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Empty state ──────────────────────────────────────────────
+  if (reports.length === 0) {
+    return (
+      <div id="main-app">
+        <div className={styles['reports-page']} style={{ alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '24px' }}>
+          <div style={{ fontSize: '56px' }}>📋</div>
+          <p style={{ marginTop: '12px', fontSize: '16px', fontWeight: 700, color: '#1a2e4a' }}>Belum ada laporan yang dikirim.</p>
+          <p style={{ marginTop: '4px', fontSize: '12px', color: '#8B9E96', textAlign: 'center' }}>Laporan fasilitas yang Anda kirim akan muncul di sini.</p>
+        </div>
+      </div>
+    );
+  }
+
+  var visibleReports = reports.slice(0, visibleCount);
+  var hasMore = visibleCount < reports.length;
 
   return (
     <div id="main-app">
@@ -124,7 +161,7 @@ export default function ReportsHistoryPage() {
           <div className={styles['rp-summary-card'] + ' ' + styles.white}>
             <div className={styles['rp-summary-icon']}>⚠️</div>
             <div className={styles['rp-summary-value'] + ' ' + styles.green}>
-              {TOTAL_ACTIVE} Active Reports
+              {activeReports} Active Reports
             </div>
           </div>
 
@@ -132,7 +169,7 @@ export default function ReportsHistoryPage() {
           <div className={styles['rp-summary-card'] + ' ' + styles['green-bg']}>
             <div className={styles['rp-summary-icon']}>✅</div>
             <div className={styles['rp-summary-value'] + ' ' + styles.dark}>
-              {TOTAL_RESOLVED} Resolved
+              {resolvedReports} Resolved
             </div>
           </div>
         </div>
@@ -150,18 +187,18 @@ export default function ReportsHistoryPage() {
                   <div className={styles['rp-card-banner-img'] + ' ' + styles[report.bannerStyle]}>
                     {report.bannerIcon}
                   </div>
-                  <div className={styles['rp-badge-pill']}>{report.type}</div>
+                  <div className={styles['rp-badge-pill']}>{formatType(report.type)}</div>
                 </div>
 
                 {/* Card Body */}
                 <div className={styles['rp-card-body']}>
                   <div className={styles['rp-card-row']}>
                     <div className={styles['rp-card-info']}>
-                      <div className={styles['rp-card-title']}>{report.title}</div>
-                      <div className={styles['rp-card-desc']}>{report.desc}</div>
+                      <div className={styles['rp-card-title']}>{report.location_ref || 'Lokasi tidak diketahui'}</div>
+                      <div className={styles['rp-card-desc']}>{report.description}</div>
                     </div>
                     <div className={styles['rp-status-pill'] + ' ' + getStatusClass(report.status)}>
-                      {report.status}
+                      {formatStatus(report.status)}
                     </div>
                   </div>
                 </div>
@@ -169,7 +206,7 @@ export default function ReportsHistoryPage() {
                 {/* Footer */}
                 <div className={styles['rp-card-footer']}>
                   <span className={styles['rp-calendar-icon']}>📅</span>
-                  <span className={styles['rp-date-text']}>{report.date}</span>
+                  <span className={styles['rp-date-text']}>{formatDate(report.created_at)}</span>
                 </div>
               </div>
             );
@@ -180,7 +217,7 @@ export default function ReportsHistoryPage() {
         {hasMore ? (
           <button
             className={styles['rp-load-more']}
-            onClick={function () { setVisibleCount(USER_REPORTS.length); }}
+            onClick={function () { setVisibleCount(reports.length); }}
           >
             Load older reports
           </button>

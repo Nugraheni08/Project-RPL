@@ -20,6 +20,8 @@ export default function MyPointsPage() {
   var [isLoading, setIsLoading] = useState(true);
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  var [achievements, setAchievements] = useState<any[]>([]);
+
   useEffect(function () {
     var loadData = async function () {
       var result = await supabase.auth.getSession();
@@ -30,7 +32,13 @@ export default function MyPointsPage() {
 
       var userId = result.data.session.user.id;
 
-      // Fetch rank & recent activities dari DB
+      // Fetch rank, recent activities, dan achievements dari API
+      var apiRes = await fetch('/api/user/dashboard');
+      var apiJson = await apiRes.json();
+      if (apiRes.ok && apiJson.achievements) {
+        setAchievements(apiJson.achievements);
+      }
+
       await Promise.all([
         fetchUserRank(userId),
         fetchRecentActivities(userId, 10),
@@ -129,6 +137,35 @@ export default function MyPointsPage() {
             <div className={styles['mp-callout-text']}>
               Your activity this month is equivalent to planting {Math.max(1, Math.round(points / 600))} new trees
             </div>
+          </div>
+        </div>
+
+        {/* ==================== ACHIEVEMENTS ==================== */}
+        <div className={styles['mp-section']}>
+          <div className={styles['mp-section-title']}>Achievements</div>
+          <div className={styles['mp-activity-card']}>
+            {achievements.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: '#999' }}>
+                Belum ada achievement
+              </div>
+            ) : (
+              achievements.map(function (ach) {
+                return (
+                  <div key={ach.id} className={styles['mp-act-item']} style={{ opacity: ach.unlocked ? 1 : 0.4 }}>
+                    <div className={styles['mp-act-badge'] + ' ' + (ach.unlocked ? styles.water : '')} style={{ fontSize: '22px' }}>
+                      {ach.icon}
+                    </div>
+                    <div className={styles['mp-act-info']}>
+                      <div className={styles['mp-act-name']}>{ach.name}</div>
+                      <div className={styles['mp-act-time']}>{ach.desc}</div>
+                    </div>
+                    <div className={styles['mp-act-pts']} style={{ color: ach.unlocked ? '#1D9E75' : '#ccc' }}>
+                      {ach.unlocked ? '✅' : '🔒'}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 

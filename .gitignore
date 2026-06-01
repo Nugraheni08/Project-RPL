@@ -3,3 +3,7 @@ Apps/backend/node_modules/
 
 # ignore file database di folder backend
 Apps/backend/.env
+# ignore untuk folder frontend
+Apps/frontend/.env.local
+Apps/frontend/.next/
+Apps/frontend/node_modules/

@@ -42,33 +42,26 @@ export default function FeedbackPage() {
     setIsSubmitting(true);
 
     try {
-      var sessionResult = await supabase.auth.getSession();
-      var userId = sessionResult.data.session?.user?.id || null;
+      var res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: rating,
+          comment: feedback,
+          isAnonymous: isAnonymous,
+        }),
+      });
 
-      var payload: any = {
-        rating: rating,
-        message: feedback,
-        is_anonymous: isAnonymous,
-      };
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal mengirim feedback.');
 
-      if (isAnonymous) {
-        payload.user_id = null;
-      } else {
-        payload.user_id = userId;
-      }
-
-      var { error } = await supabase
-        .from('user_feedback')
-        .insert([payload]);
-
-      if (error) throw error;
-
-      showToast('Feedback sent! Thank you for your input.', '✅');
+      showToast(json.message || 'Feedback sent! Thank you for your input.', '✅');
       setRating(0);
       setHoverRating(0);
       setFeedback('');
       setIsAnonymous(true);
     } catch (err: any) {
+      console.error('FEEDBACK_SUBMIT_ERROR:', err);
       showToast(err.message || 'Failed to send feedback. Please try again.', '❌');
     } finally {
       setIsSubmitting(false);
