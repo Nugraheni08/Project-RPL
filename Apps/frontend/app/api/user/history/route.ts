@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { cookies } from 'next/headers';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -12,21 +11,29 @@ export async function GET() {
       return NextResponse.json({ error: 'Konfigurasi server tidak lengkap.' }, { status: 500 });
     }
 
-    // ── Step 1: Verifikasi user via cookie-based client ────────────
-    const cookieStore = cookies();
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      global: { headers: { Cookie: cookieStore.toString() } },
-    });
+    // ── Step 1: Extract token from Authorization header ───────────
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1];
 
-    const { data: sessionData, error: sessionError } = await supabase.auth.getUser();
-    if (sessionError || !sessionData?.user) {
+    if (!token) {
+      console.error('USER_HISTORY_ERROR — Token tidak ditemukan di header.');
       return NextResponse.json({ error: 'Tidak terautentikasi.' }, { status: 401 });
     }
 
-    const userId = sessionData.user.id;
+    // ── Step 2: Verify token and get user ─────────────────────────
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
 
-    // ── Step 2: Privileged queries via service_role ────────────────
+    const { data: userData, error: userError } = await authClient.auth.getUser(token);
+    if (userError || !userData?.user) {
+      console.error('USER_HISTORY_ERROR — Verifikasi token gagal:', userError);
+      return NextResponse.json({ error: 'Tidak terautentikasi.' }, { status: 401 });
+    }
+
+    const userId = userData.user.id;
+
+    // ── Step 3: Privileged queries via service_role ────────────────
     const serviceSupabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });

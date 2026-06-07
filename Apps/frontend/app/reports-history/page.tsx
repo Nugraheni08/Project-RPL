@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
@@ -58,34 +58,81 @@ export default function ReportsHistoryPage() {
   var [error, setError] = useState('');
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
   var [visibleCount, setVisibleCount] = useState(4);
+  var [userId, setUserId] = useState<string>('');
 
-  // ── Auth check + fetch data ──────────────────────────────────
+  // ── Fetch reports from API ────────────────────────────────────
+  var fetchReports = useCallback(async function () {
+    try {
+      var sessionRes = await supabase.auth.getSession();
+      var token = sessionRes.data.session?.access_token;
+
+      var res = await fetch('/api/reports/user', {
+        headers: {
+          'Authorization': 'Bearer ' + (token || ''),
+        },
+      });
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Gagal memuat laporan.');
+
+      setReports(json.reports || []);
+    } catch (err: unknown) {
+      var msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(msg);
+      console.error('USER_REPORTS_FETCH_ERROR:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ── Auth check + initial fetch ─────────────────────────────────
   useEffect(function () {
     var init = async function () {
-      try {
-        // 1. Cek session client-side
-        var sessionResult = await supabase.auth.getSession();
-        if (!sessionResult.data.session) {
-          router.replace('/auth');
-          return;
-        }
-
-        // 2. Fetch reports milik user ini dari API
-        var res = await fetch('/api/reports/user');
-        var json = await res.json();
-        if (!res.ok) throw new Error(json.error || 'Gagal memuat laporan.');
-
-        setReports(json.reports || []);
-      } catch (err: unknown) {
-        var msg = err instanceof Error ? err.message : 'Unknown error';
-        setError(msg);
-        console.error('USER_REPORTS_FETCH_ERROR:', err);
-      } finally {
-        setLoading(false);
+      var sessionResult = await supabase.auth.getSession();
+      if (!sessionResult.data.session) {
+        router.replace('/auth');
+        return;
       }
+      setUserId(sessionResult.data.session.user.id);
+      await fetchReports();
     };
     init();
-  }, [router]);
+  }, [router, fetchReports]);
+
+  // ── Realtime subscription: instant status sync with Admin ──────
+  useEffect(function () {
+    if (!userId) return;
+
+    var channelName = 'user-reports-' + userId;
+
+    var channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'reports', filter: 'user_id=eq.' + userId },
+        function (payload: any) {
+          // Update the specific report in-place so status badges change instantly
+          var updated = payload.new;
+          setReports(function (prev) {
+            return prev.map(function (r) {
+              if (r.id === updated.id) {
+                return {
+                  ...r,
+                  status: updated.status || r.status,
+                  description: updated.description || r.description,
+                  location_ref: updated.location_ref || r.location_ref,
+                };
+              }
+              return r;
+            });
+          });
+        }
+      )
+      .subscribe();
+
+    return function () {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   // ── Dynamic summary counters ─────────────────────────────────
   var activeReports = reports.filter(function (r) {

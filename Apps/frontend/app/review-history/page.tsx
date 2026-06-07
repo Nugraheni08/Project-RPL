@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
@@ -40,13 +40,20 @@ export default function ReviewHistoryPage() {
   var [reviews, setReviews] = useState<Review[]>([]);
   var [visibleCount, setVisibleCount] = useState(4);
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  var channelRef = useRef<any>(null);
-  var userIdRef = useRef<string>('');
+  var [userId, setUserId] = useState<string>('');
 
   // ── Fetch reviews from API ────────────────────────────────────
-  var fetchReviews = async function () {
+  var fetchReviews = useCallback(async function () {
     try {
-      var res = await fetch('/api/user/reviews');
+      // ── Header-based token passing ──────────────────────────────
+      var sessionRes = await supabase.auth.getSession();
+      var token = sessionRes.data.session?.access_token;
+
+      var res = await fetch('/api/user/reviews', {
+        headers: {
+          'Authorization': 'Bearer ' + (token || ''),
+        },
+      });
       var json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal memuat ulasan.');
 
@@ -59,9 +66,9 @@ export default function ReviewHistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ── Initial load + real-time channel ──────────────────────────
+  // ── Auth check + initial fetch ─────────────────────────────────
   useEffect(function () {
     var init = async function () {
       var sessionResult = await supabase.auth.getSession();
@@ -70,37 +77,36 @@ export default function ReviewHistoryPage() {
         router.replace('/auth');
         return;
       }
-      userIdRef.current = currentSession.user.id;
-
+      setUserId(currentSession.user.id);
       await fetchReviews();
-
-      // Real-time listener
-      var channel = supabase
-        .channel('user-reviews-' + userIdRef.current)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userIdRef.current },
-          function () { fetchReviews(); }
-        )
-        .on(
-          'postgres_changes',
-          { event: 'DELETE', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userIdRef.current },
-          function () { fetchReviews(); }
-        )
-        .subscribe();
-
-      channelRef.current = channel;
     };
-
     init();
+  }, [router, fetchReviews]);
+
+  // ── Real-time subscription (depends on reactive userId) ────────
+  useEffect(function () {
+    if (!userId) return;
+
+    var channelName = 'user-reviews-' + userId;
+
+    var channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userId },
+        function () { fetchReviews(); }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'reviews', filter: 'user_id=eq.' + userId },
+        function () { fetchReviews(); }
+      )
+      .subscribe();
 
     return function () {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [userId, fetchReviews]);
 
   // ── Loading state ────────────────────────────────────────────
   if (loading) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import Sidebar from '../../components/layout/Sidebar';
@@ -26,17 +26,24 @@ export default function HistoryPage() {
   var [activities, setActivities] = useState<Activity[]>([]);
   var [visibleCount, setVisibleCount] = useState(3);
   var [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  var channelRef = useRef<any>(null);
-  var userIdRef = useRef<string>('');
+  var [userId, setUserId] = useState<string>('');
 
   var TARGET_REFILLS = 50;
   var TARGET_WASTE = 20;
   var TARGET_POINTS = 1000;
 
   // ── Fetch data ———————————————————————————————————————————————
-  var fetchHistory = async function () {
+  var fetchHistory = useCallback(async function () {
     try {
-      var res = await fetch('/api/user/history');
+      // ── Header-based token passing ──────────────────────────────
+      var sessionRes = await supabase.auth.getSession();
+      var token = sessionRes.data.session?.access_token;
+
+      var res = await fetch('/api/user/history', {
+        headers: {
+          'Authorization': 'Bearer ' + (token || ''),
+        },
+      });
       var json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Gagal memuat riwayat.');
 
@@ -51,47 +58,42 @@ export default function HistoryPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // ── Initial load + real-time channel ———————————————————————————
+  // ── Auth check + initial fetch ─────────────────────────────────
   useEffect(function () {
     var init = async function () {
-      // 1) Auth check
       var sessionResult = await supabase.auth.getSession();
       var currentSession = sessionResult.data.session;
       if (!currentSession) {
         router.replace('/auth');
         return;
       }
-      userIdRef.current = currentSession.user.id;
-
-      // 2) Fetch initial
+      setUserId(currentSession.user.id);
       await fetchHistory();
-
-      // 3) Real-time listener
-      var channel = supabase
-        .channel('user-history-' + userIdRef.current)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'refill_activity', filter: 'user_id=eq.' + userIdRef.current },
-          function () {
-            fetchHistory();
-          }
-        )
-        .subscribe();
-
-      channelRef.current = channel;
     };
-
     init();
+  }, [router, fetchHistory]);
+
+  // ── Real-time subscription (depends on reactive userId) ────────
+  useEffect(function () {
+    if (!userId) return;
+
+    var channelName = 'user-history-' + userId;
+
+    var channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'refill_activity', filter: 'user_id=eq.' + userId },
+        function () { fetchHistory(); }
+      )
+      .subscribe();
 
     return function () {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, [userId, fetchHistory]);
 
   // ── Loading state ——————————————————————————————————————————————
   if (loading) {

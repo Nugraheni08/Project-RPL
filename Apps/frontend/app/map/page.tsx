@@ -104,7 +104,16 @@ export default function MapPage() {
     var fetchStats = async function () {
       setStatsLoading(true);
       try {
-        var res = await fetch('/api/user/dashboard');
+        // ── Header-based token passing ──────────────────────────────
+        var sessionRes = await supabase.auth.getSession();
+        var token = sessionRes.data.session?.access_token;
+        var userId = sessionRes.data.session?.user?.id;
+
+        var res = await fetch('/api/user/dashboard', {
+          headers: {
+            'Authorization': 'Bearer ' + (token || ''),
+          },
+        });
         var json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Gagal memuat statistik.');
 
@@ -115,8 +124,6 @@ export default function MapPage() {
           rank: json.rank || 0,
         });
 
-        var sessionRes = await supabase.auth.getSession();
-        var userId = sessionRes.data.session?.user?.id;
         if (userId) {
           await fetchRecentActivities(userId, 5);
         }
@@ -423,7 +430,8 @@ export default function MapPage() {
       />
       <ReviewModal 
         isOpen={isReviewOpen} 
-        onClose={function () { setIsReviewOpen(false); }} 
+        onClose={function () { setIsReviewOpen(false); }}
+        locationName={activeStation?.name || ''}
       />
       <ReportModal 
         isOpen={isReportOpen} 

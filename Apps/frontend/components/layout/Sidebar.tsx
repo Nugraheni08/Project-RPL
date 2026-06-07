@@ -89,7 +89,7 @@ export default function Sidebar({ isOpen, onClose, onReportIssue }: SidebarProps
             </button>
             <div className={styles['sidebar-sub']}>
               <button className={styles['sidebar-sub-item']} onClick={(e) => { e.stopPropagation(); onClose(); if (onReportIssue) onReportIssue(); }}>Report Facility Issue</button>
-              <button className={styles['sidebar-sub-item']} onClick={(e) => e.stopPropagation()}>View Report</button>
+              <button className={styles['sidebar-sub-item']} onClick={(e) => { e.stopPropagation(); onClose(); router.push('/reports-history'); }}>View Report</button>
               <button className={styles['sidebar-sub-item']} onClick={(e) => { e.stopPropagation(); onClose(); router.push('/feedback'); }}>Submit Review</button>
             </div>
           </div>

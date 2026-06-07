@@ -42,9 +42,16 @@ export default function FeedbackPage() {
     setIsSubmitting(true);
 
     try {
+      // ── Header-based token passing ──────────────────────────────
+      var sessionRes = await supabase.auth.getSession();
+      var token = sessionRes.data.session?.access_token;
+
       var res = await fetch('/api/feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (token || ''),
+        },
         body: JSON.stringify({
           rating: rating,
           comment: feedback,

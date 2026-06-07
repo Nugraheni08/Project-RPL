@@ -31,9 +31,14 @@ export default function MyPointsPage() {
       }
 
       var userId = result.data.session.user.id;
+      var token = result.data.session.access_token;
 
       // Fetch rank, recent activities, dan achievements dari API
-      var apiRes = await fetch('/api/user/dashboard');
+      var apiRes = await fetch('/api/user/dashboard', {
+        headers: {
+          'Authorization': 'Bearer ' + (token || ''),
+        },
+      });
       var apiJson = await apiRes.json();
       if (apiRes.ok && apiJson.achievements) {
         setAchievements(apiJson.achievements);

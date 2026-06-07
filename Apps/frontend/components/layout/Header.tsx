@@ -48,7 +48,14 @@ export default function Header({ onMenuClick, onProfileClick }: HeaderProps) {
   useEffect(function () {
     var fetchNotifications = async function () {
       try {
-        var res = await fetch('/api/notifications');
+        var sessionRes = await supabase.auth.getSession();
+        var token = sessionRes.data.session?.access_token;
+
+        var res = await fetch('/api/notifications', {
+          headers: {
+            'Authorization': 'Bearer ' + (token || ''),
+          },
+        });
         var json = await res.json();
         if (res.ok && json.notifications) {
           setNotifications(json.notifications);

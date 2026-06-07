@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { showToast } from '../ui/Toast';
 import styles from '@/styles/modals.module.css';
@@ -35,10 +36,17 @@ export default function ReviewModal({ isOpen, onClose, locationName = 'Waste Bin
     setIsSubmitting(true);
 
     try {
+      // ── Header-based token passing ──────────────────────────────
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       // Kirim ke API route untuk insert ke DB + Realtime sync
       const res = await fetch('/api/facility/review', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (token || ''),
+        },
         body: JSON.stringify({
           facilityId: facilityId || locationName, // fallback ke nama jika tidak ada UUID
           rating,
