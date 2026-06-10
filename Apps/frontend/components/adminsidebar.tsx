@@ -61,12 +61,7 @@ export default function AdminSidebar() {
         </Link>
 
         <Link href="/admin-reports" className={linkClass("/admin-reports")}>
-          <div className="flex w-full items-center">
-            <div className="flex items-center gap-3">
-              <FiFileText size={20} /><span>Reports Management</span>
-            </div>
-            <span className="ml-auto bg-orange-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">12</span>
-          </div>
+          <FiFileText size={20} /><span>Reports Management</span>
         </Link>
 
         <Link href="/admin-leaderboard" className={linkClass("/admin-leaderboard")}>
