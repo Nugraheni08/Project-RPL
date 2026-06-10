@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { FiLoader } from "react-icons/fi";
+import { supabase } from "@/lib/supabase";
 import {
   BarChart,
   Bar,
@@ -19,6 +20,7 @@ interface AnalyticsData {
   wasteCollected: { value: number; label: string };
   reportsThisMonth: number;
   activeUsers: { value: number; label: string };
+  totalUsers: { value: number; label: string };
   weeklyRefill: { day: string; refill: number }[];
   monthlyReports: { month: string; reports: number }[];
   topLocations: { name: string; percentage: number }[];
@@ -38,22 +40,84 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
+  // Refs to hold the latest fetch function and data for real-time callbacks
+  const dataRef = useRef<AnalyticsData | null>(null);
+  const fetchRef = useRef<() => Promise<void>>(async () => {});
+
+  // Keep dataRef in sync with latest state
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const res = await fetch("/api/admin/analytics");
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || "Gagal memuat data.");
-        setData(json);
-      } catch (err: any) {
-        console.error("ANALYTICS_FRONTEND_ERROR:", err);
-        setError(err.message || "Terjadi kesalahan.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    dataRef.current = data;
+  }, [data]);
+
+  // ── Fetch analytics from API ──────────────────────────────────────
+  const fetchAnalytics = async () => {
+    try {
+      const res = await fetch("/api/admin/analytics");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal memuat data.");
+      setData(json);
+      setError("");
+      setLastUpdated(new Date().toLocaleTimeString("id-ID"));
+    } catch (err: any) {
+      console.error("ANALYTICS_FRONTEND_ERROR:", err);
+      setError(err.message || "Terjadi kesalahan.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial fetch on mount
+  useEffect(() => {
+    fetchRef.current = fetchAnalytics;
     fetchAnalytics();
+  }, []);
+
+  // ── Supabase Realtime Subscriptions ───────────────────────────────
+  // Listen for INSERT / UPDATE / DELETE on refill_activity and reports
+  // tables so the analytics dashboard updates in real-time when users
+  // perform refills, waste disposals, or file reports around campus.
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-analytics-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'refill_activity' },
+        () => {
+          console.log('[Analytics] Refill activity changed — re-fetching...');
+          fetchRef.current();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reports' },
+        () => {
+          console.log('[Analytics] Reports changed — re-fetching...');
+          fetchRef.current();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => {
+          console.log('[Analytics] Users changed — re-fetching...');
+          fetchRef.current();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reviews' },
+        () => {
+          console.log('[Analytics] Reviews changed — re-fetching...');
+          fetchRef.current();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // Helper: format angka besar (4.2K, 1.2M)
@@ -126,6 +190,11 @@ export default function AdminAnalyticsPage() {
           <h2 className="text-5xl font-bold text-purple-600 mt-3">
             {data.activeUsers.label}
           </h2>
+          {data.totalUsers && (
+            <p className="text-xs text-slate-400 mt-1 font-medium">
+              of {data.totalUsers.label} total registered
+            </p>
+          )}
         </div>
       </div>
 
@@ -166,6 +235,15 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* LAST UPDATED INDICATOR */}
+      {lastUpdated && (
+        <div className="text-right mb-4">
+          <span className="text-xs text-slate-400 font-medium">
+            Last updated: {lastUpdated}
+          </span>
+        </div>
+      )}
 
       {/* BOTTOM SECTION */}
       <div className="grid lg:grid-cols-2 gap-6">

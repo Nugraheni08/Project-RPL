@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import {
   FiHome,
   FiMapPin,
@@ -19,8 +20,10 @@ export default function AdminSidebar() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleLogout = () => {
-    router.push("/admin-login");
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth");
+    router.refresh();
   };
 
   const isActive = (href: string) => pathname === href;

@@ -19,6 +19,8 @@ interface Facility {
   category: string;
   location: string;
   status: string;
+  latitude: number;
+  longitude: number;
 }
 
 export default function AdminFacilityPage() {
@@ -37,6 +39,8 @@ export default function AdminFacilityPage() {
   var [facilityCategory, setFacilityCategory] = useState("Water Refill");
   var [facilityLocation, setFacilityLocation] = useState("");
   var [facilityStatus, setFacilityStatus] = useState("Active");
+  var [facilityLatitude, setFacilityLatitude] = useState("");
+  var [facilityLongitude, setFacilityLongitude] = useState("");
 
   // Delete confirmation
   var [deleteTarget, setDeleteTarget] = useState<Facility | null>(null);
@@ -71,6 +75,8 @@ export default function AdminFacilityPage() {
     setFacilityCategory("Water Refill");
     setFacilityLocation("");
     setFacilityStatus("Active");
+    setFacilityLatitude("");
+    setFacilityLongitude("");
     setEditMode(false);
     setSelectedId(null);
   };
@@ -90,6 +96,8 @@ export default function AdminFacilityPage() {
             category: facilityCategory,
             location: facilityLocation.trim(),
             status: facilityStatus,
+            latitude: parseFloat(facilityLatitude) || 0,
+            longitude: parseFloat(facilityLongitude) || 0,
           }),
         });
         var json = await res.json();
@@ -104,6 +112,8 @@ export default function AdminFacilityPage() {
             category: facilityCategory,
             location: facilityLocation.trim(),
             status: facilityStatus,
+            latitude: parseFloat(facilityLatitude) || 0,
+            longitude: parseFloat(facilityLongitude) || 0,
           }),
         });
         var createJson = await createRes.json();
@@ -128,6 +138,8 @@ export default function AdminFacilityPage() {
     setFacilityCategory(facility.category);
     setFacilityLocation(facility.location);
     setFacilityStatus(facility.status);
+    setFacilityLatitude(String(facility.latitude || ''));
+    setFacilityLongitude(String(facility.longitude || ''));
     setEditMode(true);
     setShowModal(true);
   };
@@ -143,10 +155,8 @@ export default function AdminFacilityPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      var res = await fetch("/api/admin/facilities", {
+      var res = await fetch("/api/admin/facilities?id=" + encodeURIComponent(deleteTarget.id), {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: deleteTarget.id }),
       });
       var json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal hapus.");
@@ -329,6 +339,23 @@ export default function AdminFacilityPage() {
                 <option>Water Refill</option>
                 <option>Waste Bin</option>
               </select>
+
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  placeholder="Latitude (e.g. -5.3612)"
+                  value={facilityLatitude}
+                  onChange={function (e) { setFacilityLatitude(e.target.value); }}
+                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950 font-semibold placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Longitude (e.g. 105.2423)"
+                  value={facilityLongitude}
+                  onChange={function (e) { setFacilityLongitude(e.target.value); }}
+                  className="w-full border border-slate-300 p-4 rounded-xl text-slate-950 font-semibold placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+              </div>
 
               <select
                 value={facilityStatus}

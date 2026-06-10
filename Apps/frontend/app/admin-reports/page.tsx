@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { FiLoader } from "react-icons/fi";
@@ -34,6 +34,9 @@ export default function AdminReportsPage() {
   var [showModal, setShowModal] = useState(false);
   var [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Ref to hold latest fetch function for real-time subscriptions
+  var fetchReportsRef = useRef<() => Promise<void>>(async () => {});
+
   var fetchReports = async function () {
     setIsLoading(true);
     setError(null);
@@ -55,23 +58,43 @@ export default function AdminReportsPage() {
   };
 
   useEffect(function () {
+    fetchReportsRef.current = fetchReports;
     fetchReports();
   }, []);
 
+  // ── Supabase Realtime: auto-refresh on changes to the reports table ──
+  useEffect(function () {
+    var channel = supabase
+      .channel('admin-reports-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'reports' },
+        function () {
+          console.log('[Reports] Table changed — re-fetching...');
+          fetchReportsRef.current();
+        }
+      )
+      .subscribe();
+
+    return function () {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // ── Update status via the secure admin API (service_role) ───────
   var updateStatus = async function (id: string, newStatus: string) {
     setUpdatingId(id);
     try {
-      var { error: updateError } = await supabase
-        .from("reports")
-        .update({ status: newStatus })
-        .eq("id", id);
+      var res = await fetch("/api/admin/reports", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: newStatus }),
+      });
 
-      if (updateError) throw updateError;
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal memperbarui status.");
 
-      // Refresh data setelah update
-      await fetchReports();
-
-      // Update selected report di modal jika terbuka
+      // Sync updated status into selectedReport modal if open
       if (selectedReport && selectedReport.id === id) {
         setSelectedReport({ ...selectedReport, status: newStatus });
       }

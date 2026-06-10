@@ -362,6 +362,8 @@
 
     if (!isOpen || !activeStation) return null;
 
+    var isWaterMode = activeStation.type === 'refill_air' || activeStation.type === 'water' || (activeStation.category || '').toLowerCase() === 'water refill' || (activeStation.category || '').toLowerCase() === 'water station';
+
     return (
       <div className={`${styles['modal-overlay']} ${styles.open}`} onClick={onClose}>
         <div className={styles['modal-sheet']} style={{ padding: '0 0 0' }} onClick={e => e.stopPropagation()}>
@@ -465,8 +467,8 @@
             </div>
           ) : null}
 
-          <div className={styles['station-photos']}>
-            <div className={styles['station-photo']}>🚰</div>
+            <div className={styles['station-photos']}>
+            <div className={styles['station-photo']}>{isWaterMode ? '🚰' : '🗑️'}</div>
             <div className={styles['add-photo-btn']}><span>📷</span>Add a photo</div>
           </div>
 

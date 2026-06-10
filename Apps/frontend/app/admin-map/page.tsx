@@ -85,20 +85,24 @@ export default function AdminMapPage() {
         status: status,
       };
 
+      var res: Response;
       if (editMode && selectedId) {
-        var { error: updateError } = await supabase
-          .from("facilities")
-          .update(payload)
-          .eq("id", selectedId);
-
-        if (updateError) throw updateError;
+        payload.id = selectedId;
+        res = await fetch("/api/admin/facilities", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
       } else {
-        var { error: insertError } = await supabase
-          .from("facilities")
-          .insert(payload);
-
-        if (insertError) throw insertError;
+        res = await fetch("/api/admin/facilities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
       }
+
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal menyimpan fasilitas.");
 
       await fetchFacilities();
       resetForm();
@@ -116,14 +120,14 @@ export default function AdminMapPage() {
     if (!confirm("Are you sure you want to delete this facility?")) return;
 
     try {
-      var { error: deleteError } = await supabase
-        .from("facilities")
-        .delete()
-        .eq("id", id);
+      var res = await fetch("/api/admin/facilities?id=" + encodeURIComponent(id), {
+        method: "DELETE",
+      });
+      var json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal menghapus fasilitas.");
 
-      if (deleteError) throw deleteError;
-
-      await fetchFacilities();
+      // Optimistic UI — instantly remove from local state
+      setFacilities(function (prev) { return prev.filter(function (f) { return f.id !== id; }); });
     } catch (err: unknown) {
       var message = err instanceof Error ? err.message : "Unknown error";
       setError("Gagal menghapus fasilitas: " + message);

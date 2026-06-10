@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import AdminSidebar from "@/components/adminsidebar";
-import MapView from "@/components/map/MapView";
+import MapView, { MapFacility } from "@/components/map/MapView";
+import { supabase } from "@/lib/supabase";
 import {
   FiUser,
   FiSearch,
@@ -38,6 +39,8 @@ export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dbFacilities, setDbFacilities] = useState<MapFacility[]>([]);
+  var fetchFacilitiesRef = useRef<() => Promise<void>>(async function () {});
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -55,6 +58,41 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(function () {
+    var fetchFacilities = async function () {
+      try {
+        var res = await fetch('/api/facilities');
+        var json = await res.json();
+        if (res.ok && json.facilities) {
+          setDbFacilities(json.facilities);
+        }
+      } catch (err) {
+        console.error('Admin dashboard: gagal fetch facilities:', err);
+      }
+    };
+
+    fetchFacilitiesRef.current = fetchFacilities;
+    fetchFacilities();
+  }, []);
+
+  // ── Supabase Realtime subscription for live facility updates ──
+  useEffect(function () {
+    var channel = supabase
+      .channel('admin-dashboard-facilities')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'facilities' },
+        function () {
+          fetchFacilitiesRef.current();
+        }
+      )
+      .subscribe();
+
+    return function () {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => { fetchDashboard(); }, []);
 
@@ -173,7 +211,8 @@ export default function AdminDashboard() {
               </div>
               <MapView 
                 className="h-[450px] w-full rounded-2xl relative overflow-hidden isolate border border-slate-200" 
-                style={{ zIndex: 10 }} 
+                style={{ zIndex: 10 }}
+                facilities={dbFacilities}
               />
             </div>
 

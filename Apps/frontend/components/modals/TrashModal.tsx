@@ -234,6 +234,8 @@ export default function TrashModal({ isOpen, onClose, onReviewClick, onReportCli
 
   if (!isOpen || !activeStation) return null;
 
+  var isWaterMode = activeStation.type === 'refill_air' || activeStation.type === 'water' || (activeStation.category || '').toLowerCase() === 'water refill' || (activeStation.category || '').toLowerCase() === 'water station';
+
   const avg = activeStation.rating || 5.0;
   const filled = Math.round(avg);
   const starsStr = '★'.repeat(filled) + '☆'.repeat(5 - filled);
@@ -377,7 +379,7 @@ export default function TrashModal({ isOpen, onClose, onReviewClick, onReportCli
 
         {/* ============ MEDIA ROW ============ */}
         <div className={styles['detail-media-row']}>
-          <div className={styles['detail-photo-thumb']}>🗑️</div>
+          <div className={styles['detail-photo-thumb']}>{isWaterMode ? '🚰' : '🗑️'}</div>
           <div className={styles['detail-add-photo']}>
             <span>📷</span>
             Add a photo

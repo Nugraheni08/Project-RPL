@@ -8,7 +8,6 @@ import Header from '../../components/layout/Header';
 import Sidebar from '../../components/layout/Sidebar';
 import ProfilePanel from '../../components/layout/ProfilePanel';
 
-import MapView from '../../components/map/MapView';
 import Leaderboard from '../../components/ui/Leaderboard';
 import Toast from '../../components/ui/Toast';
 
@@ -20,8 +19,8 @@ import ReportModal from '../../components/modals/ReportModal';
 import { useMapStore } from '../../store/mapStore';
 import { useAuthStore } from '../../store/authStore';
 import { useActivityStore } from '../../store/activityStore';
-import { waterStations, trashBins, stationStatuses, trashStatuses } from '../../lib/contstants';
 import ChatBot from '../../components/chat/ChatBot';
+import MapView, { MapFacility } from '../../components/map/MapView';
 
 // Tipe untuk statistik dashboard user
 interface DashboardStats {
@@ -61,6 +60,48 @@ export default function MapPage() {
   const { activeStation, setActiveStation } = useMapStore();
   const { displayName, setDisplayName } = useAuthStore();
   const { fetchUserRank, fetchRecentActivities } = useActivityStore();
+
+  // DB facilities
+  const [dbFacilities, setDbFacilities] = useState<MapFacility[]>([]);
+
+  // ── Reusable facility fetcher (stable ref for Realtime callback) ──
+  var fetchFacilitiesRef = useRef<() => Promise<void>>(async function () {});
+
+  useEffect(function () {
+    var fetchFacilities = async function () {
+      try {
+        var res = await fetch('/api/facilities');
+        var json = await res.json();
+        if (res.ok && json.facilities) {
+          setDbFacilities(json.facilities);
+        }
+      } catch (err) {
+        console.error('Gagal fetch facilities:', err);
+      }
+    };
+
+    fetchFacilitiesRef.current = fetchFacilities;
+    fetchFacilities();
+  }, []);
+
+  // ── Supabase Realtime subscription for live facility updates ──
+  useEffect(function () {
+    var channel = supabase
+      .channel('facilities-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'facilities' },
+        function () {
+          // Re-fetch facilities whenever an admin inserts/updates/deletes
+          fetchFacilitiesRef.current();
+        }
+      )
+      .subscribe();
+
+    return function () {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Dashboard stats dari DB
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -173,29 +214,24 @@ export default function MapPage() {
     checkUser();
   }, [router, setDisplayName]);
 
-  // Gabungkan semua fasilitas untuk dropdown pencarian
-  var allFacilities = ([] as Array<{
-    id: string;
-    name: string;
-    addr: string;
-    lat: number;
-    lng: number;
-    type: 'water' | 'trash';
-    rating?: number;
-    fullAddr?: string;
-  }>).concat(
-    waterStations.map(function (s, i) {
-      return { id: 'water-' + i, name: s.name, addr: s.addr, lat: s.lat, lng: s.lng, type: 'water' as const, rating: s.rating, fullAddr: s.fullAddr };
-    }),
-    trashBins.map(function (t, i) {
-      return { id: 'trash-' + i, name: t.name, addr: t.addr, lat: t.lat, lng: t.lng, type: 'trash' as const };
-    })
-  );
+  // Gabungkan semua fasilitas dari DB untuk dropdown pencarian
+  var allFacilities = dbFacilities.map(function (f) {
+    var isWater = f.type === 'refill_air' || f.category?.toLowerCase() === 'water refill' || f.category?.toLowerCase() === 'water station';
+    return {
+      id: f.id,
+      name: f.name,
+      category: f.category || '',
+      address: f.addr || '',
+      lat: f.latitude,
+      lng: f.longitude,
+      type: (isWater ? 'water' : 'trash') as 'water' | 'trash',
+    };
+  });
 
   var filteredFacilities = searchQuery.trim()
     ? allFacilities.filter(function (f) {
-        return f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               f.addr.toLowerCase().includes(searchQuery.toLowerCase());
+        return (f.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+               (f.address || '').toLowerCase().includes(searchQuery.toLowerCase());
       })
     : [];
 
@@ -215,33 +251,18 @@ export default function MapPage() {
     setIsDropdownOpen(false);
     setSearchQuery('');
 
-    if (facility.type === 'water') {
-      var stationIndex = parseInt(facility.id.replace('water-', ''), 10);
-      var status = stationStatuses[stationIndex] || 'active';
-      setActiveStation({
-        name: facility.name,
-        lat: facility.lat,
-        lng: facility.lng,
-        addr: facility.addr,
-        fullAddr: facility.fullAddr,
-        rating: facility.rating,
-        type: 'water',
-        id: facility.id,
-        status: status,
-      });
-    } else {
-      var trashIndex = parseInt(facility.id.replace('trash-', ''), 10);
-      var tStatus = trashStatuses[trashIndex] || 'active';
-      setActiveStation({
-        name: facility.name,
-        lat: facility.lat,
-        lng: facility.lng,
-        addr: facility.addr,
-        type: 'trash',
-        id: facility.id,
-        status: tStatus,
-      });
-    }
+    setActiveStation({
+      name: facility.name,
+      lat: facility.lat,
+      lng: facility.lng,
+      addr: facility.address,
+      fullAddr: facility.address,
+      rating: 5,
+      type: facility.type,
+      id: facility.id,
+      status: 'active',
+      category: facility.category,
+    });
   };
 
   if (isLoading) {
@@ -348,9 +369,9 @@ export default function MapPage() {
                       <div className="facility-dropdown-info">
                         <div className="facility-dropdown-name">{facility.name}</div>
                         <div className="facility-dropdown-addr">
-                          {facility.addr}
+                          {facility.address}
                           <span className="facility-dropdown-type-label">
-                            {facility.type === 'water' ? ' · Water Station' : ' · Waste Bin'}
+                          {facility.category ? ' · ' + facility.category : ''}
                           </span>
                         </div>
                       </div>
@@ -367,7 +388,7 @@ export default function MapPage() {
             ) : null}
           </div>
 
-          <MapView />
+          <MapView facilities={dbFacilities} />
 
           <Leaderboard />
 

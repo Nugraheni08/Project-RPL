@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 // ── Mapping UI ↔ DB ─────────────────────────────────────────────
 const CATEGORY_TO_TYPE: Record<string, string> = {
   'Water Refill': 'refill_air',
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
   try {
     const serviceSupabase = getServiceSupabase();
     const body = await request.json();
-    const { name, category, location, status } = body;
+    const { name, category, location, status, latitude, longitude } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: 'Facility Name wajib diisi.' }, { status: 400 });
@@ -83,10 +85,8 @@ export async function POST(request: Request) {
         category: dbCategory,
         address: location?.trim() || '',
         status: dbStatus,
-        latitude: 0,
-        longitude: 0,
-        rating: 5.0,
-        reviews_count: 0,
+        latitude: typeof latitude === 'number' ? latitude : 0,
+        longitude: typeof longitude === 'number' ? longitude : 0,
         created_at: new Date().toISOString(),
       })
       .select()
@@ -109,7 +109,7 @@ export async function PUT(request: Request) {
   try {
     const serviceSupabase = getServiceSupabase();
     const body = await request.json();
-    const { id, name, category, location, status } = body;
+    const { id, name, category, location, status, latitude, longitude } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Facility ID diperlukan.' }, { status: 400 });
@@ -123,6 +123,8 @@ export async function PUT(request: Request) {
     }
     if (location !== undefined) updates.address = location.trim();
     if (status && STATUS_TO_DB[status]) updates.status = STATUS_TO_DB[status];
+    if (latitude !== undefined && !isNaN(Number(latitude))) updates.latitude = Number(latitude);
+    if (longitude !== undefined && !isNaN(Number(longitude))) updates.longitude = Number(longitude);
 
     const { data, error } = await serviceSupabase
       .from('facilities')
@@ -147,8 +149,8 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const serviceSupabase = getServiceSupabase();
-    const body = await request.json();
-    const { id } = body;
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
     if (!id) {
       return NextResponse.json({ error: 'Facility ID diperlukan.' }, { status: 400 });

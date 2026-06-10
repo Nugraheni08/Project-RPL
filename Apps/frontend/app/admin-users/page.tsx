@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { showToast } from "@/components/ui/Toast";
 import { supabase } from "@/lib/supabase";
@@ -35,34 +35,20 @@ export default function AdminUsersPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Fetch users from public.users ──────────────────────────
+  // Ref to hold latest fetch func for real-time subscriptions
+  const fetchRef = useRef<() => Promise<void>>(async () => {});
+
+  // ── Fetch users from secure admin API ─────────────────────
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const { data, error: dbError } = await supabase
-        .from("users")
-        .select("id, email, username, role, nim, nip, is_verified, created_at")
-        .order("created_at", { ascending: false });
+      setError("");
 
-      if (dbError) throw dbError;
+      const res = await fetch("/api/admin/users");
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Gagal memuat data pengguna.");
 
-      const mapped: User[] = (data || []).map((row: any) => ({
-        id: row.id,
-        name: row.username || row.email?.split("@")[0] || "Unknown",
-        email: row.email || "",
-        nim: row.nim || row.nip || "-",
-        role: row.role || "User",
-        status: row.is_verified ? "Active" : "Inactive",
-        joinDate: row.created_at
-          ? new Date(row.created_at).toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })
-          : "-",
-      }));
-
-      setUsers(mapped);
+      setUsers(json.users || []);
     } catch (err: any) {
       console.error("FETCH_USERS_ERROR:", err);
       setError(err.message || "Gagal memuat data pengguna.");
@@ -72,7 +58,27 @@ export default function AdminUsersPage() {
   };
 
   useEffect(() => {
+    fetchRef.current = fetchUsers;
     fetchUsers();
+  }, []);
+
+  // ── Supabase Realtime: auto-refresh on users table changes ──
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-users-live')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => {
+          console.log('[Users] Table changed — re-fetching...');
+          fetchRef.current();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // ── Dynamic metric card calculations ───────────────────────
@@ -102,20 +108,20 @@ export default function AdminUsersPage() {
     setShowDeleteConfirm(true);
   };
 
-  // ── Execute delete via API ─────────────────────────────────
+  // ── Execute delete via secure admin API (service_role) ─────
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      const res = await fetch("/api/admin/users/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: deleteTarget.id }),
-      });
+      const res = await fetch(
+        "/api/admin/users?id=" + encodeURIComponent(deleteTarget.id),
+        { method: "DELETE" }
+      );
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Gagal menghapus pengguna.");
 
       showToast(json.message || "Akun berhasil dihapus.", "✅");
+      // Remove from local state immediately (real-time will also trigger a re-fetch)
       setUsers((prev) => prev.filter((u) => u.id !== deleteTarget.id));
     } catch (err: any) {
       console.error("DELETE_USER_ERROR:", err);
