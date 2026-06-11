@@ -1,6 +1,6 @@
 "use client";
 
-import AdminSidebar from "@/components/adminsidebar";
+import AdminLayout from "@/components/layout/AdminLayout";
 import {
   FiBell,
   FiCheckCircle,
@@ -46,116 +46,110 @@ export default function AdminNotificationsPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-100">
-      <AdminSidebar />
+    <AdminLayout>
+      <div className="mb-8">
+        <h1 className="text-4xl font-extrabold text-slate-950">
+          Notifications
+        </h1>
 
-      <section className="ml-64 p-8">
+        <p className="text-slate-800 text-lg mt-2">
+          Monitor all system activities and alerts
+        </p>
+      </div>
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-slate-950">
-            Notifications
-          </h1>
+      <div className="bg-white rounded-3xl shadow overflow-hidden">
 
-          <p className="text-slate-800 text-lg mt-2">
-            Monitor all system activities and alerts
-          </p>
-        </div>
+        <div className="flex justify-between items-center px-8 py-6 border-b">
 
-        <div className="bg-white rounded-3xl shadow overflow-hidden">
+          <div className="flex items-center gap-3">
 
-          <div className="flex justify-between items-center px-8 py-6 border-b">
+            <FiBell
+              size={24}
+              className="text-green-600"
+            />
 
-            <div className="flex items-center gap-3">
-
-              <FiBell
-                size={24}
-                className="text-green-600"
-              />
-
-              <h2 className="text-2xl font-bold text-slate-950">
-                Recent Notifications
-              </h2>
-
-            </div>
-
-            <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-bold">
-              Mark All Read
-            </button>
+            <h2 className="text-2xl font-bold text-slate-950">
+              Recent Notifications
+            </h2>
 
           </div>
 
-          <div className="divide-y">
+          <button className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl font-bold">
+            Mark All Read
+          </button>
 
-            {notifications.map((item) => (
-              <div
-                key={item.id}
-                className="p-6 hover:bg-slate-50 transition"
-              >
+        </div>
 
-                <div className="flex justify-between items-start">
+        <div className="divide-y">
 
-                  <div className="flex gap-4">
+          {notifications.map((item) => (
+            <div
+              key={item.id}
+              className="p-6 hover:bg-slate-50 transition"
+            >
 
-                    <div>
+              <div className="flex justify-between items-start">
 
-                      {item.type === "danger" && (
-                        <FiAlertTriangle
-                          size={24}
-                          className="text-red-600"
-                        />
-                      )}
+                <div className="flex gap-4">
 
-                      {item.type === "warning" && (
-                        <FiTrash2
-                          size={24}
-                          className="text-yellow-600"
-                        />
-                      )}
+                  <div>
 
-                      {item.type === "success" && (
-                        <FiCheckCircle
-                          size={24}
-                          className="text-green-600"
-                        />
-                      )}
+                    {item.type === "danger" && (
+                      <FiAlertTriangle
+                        size={24}
+                        className="text-red-600"
+                      />
+                    )}
 
-                      {item.type === "info" && (
-                        <FiUserPlus
-                          size={24}
-                          className="text-blue-600"
-                        />
-                      )}
+                    {item.type === "warning" && (
+                      <FiTrash2
+                        size={24}
+                        className="text-yellow-600"
+                      />
+                    )}
 
-                    </div>
+                    {item.type === "success" && (
+                      <FiCheckCircle
+                        size={24}
+                        className="text-green-600"
+                      />
+                    )}
 
-                    <div>
-
-                      <h3 className="font-bold text-slate-950 text-lg">
-                        {item.title}
-                      </h3>
-
-                      <p className="text-slate-800 mt-1">
-                        {item.description}
-                      </p>
-
-                    </div>
+                    {item.type === "info" && (
+                      <FiUserPlus
+                        size={24}
+                        className="text-blue-600"
+                      />
+                    )}
 
                   </div>
 
-                  <span className="text-slate-600 text-sm font-medium">
-                    {item.time}
-                  </span>
+                  <div>
+
+                    <h3 className="font-bold text-slate-950 text-lg">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-slate-800 mt-1">
+                      {item.description}
+                    </p>
+
+                  </div>
 
                 </div>
 
-              </div>
-            ))}
+                <span className="text-slate-600 text-sm font-medium">
+                  {item.time}
+                </span>
 
-          </div>
+              </div>
+
+            </div>
+          ))}
 
         </div>
 
-      </section>
-    </main>
+      </div>
+    </AdminLayout>
   );
 }
